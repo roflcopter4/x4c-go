@@ -2,22 +2,32 @@
 # I'm very lazy
 #
 
-.SUFFIXES: .peg .go
+.SUFFIXES: .g4 .go
 
-peg   := translate/toXML/pig.pigeon
-dirs  := ast config myxml translate/toX4C translate/toXML util util/colour
-target:= x4c
+target := x4c
+file   := translation/untranslate/X4C.g4
+dirs   := config myxml util util/colour translation \
+	  translation/ast \
+	  translation/translate \
+	  translation/untranslate \
+	  translation/untranslate/parser
 
-all: run_peg .WAIT install_dirs
+all: antlr .WAIT install_dirs
 	go build
+
+quick: antlr
+	go build
+
+fast:
+	go build
+
+skip: install_dirs
+	go build
+
+antlr:
+	antlr4 -Dlanguage=Go -long-messages -o "${.CURDIR}/${file:H}/parser" "${.CURDIR}/${file}"
 
 install_dirs:
 .for DIR in ${dirs}
 	go install "${.CURDIR}/${DIR}"
-.endfor
-
-run_peg:
-.for f in ${peg}
-	pigeon -o "${f}.go" "${f}"
-#	peg -inline -switch -noast -strict "${f}"
 .endfor

@@ -12,8 +12,6 @@ import (
 	XMLtypes "github.com/lestrrat-go/libxml2/types"
 	XMLxsd "github.com/lestrrat-go/libxml2/xsd"
 	"github.com/pkg/errors"
-
-	"github.com/roflcopter4/x4c/util"
 )
 
 type DocWrapper interface {
@@ -51,24 +49,27 @@ type document struct {
 // Create a new DocWrapper from a filename
 func New_Document(fname string) (DocWrapper, error) {
 	var (
-		err      error
-		xml_file *os.File
-		doc      XMLtypes.Document
-		lines    []string
-		fileinfo *fileName
+		err       error
+		xml_file  *os.File
+		doc       XMLtypes.Document
+		docstring string
+		lines     []string
+		fileinfo  *fileName
 	)
 
 	if fileinfo, err = get_filename_info(fname); err != nil {
 		return nil, errors.Wrap(err, "Failed to resolve path")
 	}
 
-	docstring := badly_escape_line_breaks(fileinfo.full)
+	// docstring := badly_escape_line_breaks(fileinfo.full)
+
+	if lines, docstring, err = badly_escape_line_breaks(fileinfo.full); err != nil {
+		return nil, err
+	}
+
 	// fmt.Print(1, "%s", docstring)
 	// os.Exit(1)
 
-	// if xml_file, err = os.Open(fileinfo.full); err != nil {
-	//       return nil, err
-	// }
 	// if doc, err = XML.ParseReader(xml_file); err != nil {
 	//       return nil, errors.WithMessage(err, "XML parse failed")
 	// }
@@ -79,9 +80,9 @@ func New_Document(fname string) (DocWrapper, error) {
 	doc.MakeMortal()
 	xml_file.Close()
 
-	if lines, err = read_lines(fileinfo.full); err != nil {
-		return nil, errors.WithStack(err)
-	}
+	// if lines, err = read_lines(fileinfo.full); err != nil {
+	//       return nil, err
+	// }
 
 	docwrap := &document{
 		schema:     schema{},
@@ -95,15 +96,19 @@ func New_Document(fname string) (DocWrapper, error) {
 }
 
 func get_filename_info(fname string) (*fileName, error) {
-	var err error
-	if fname, err = filepath.Abs(fname); err != nil {
-		return nil, errors.Wrap(err, "Failed to resolve path")
+	if fname == "-" {
+		return &fileName{"<STDIN>", "<STDIN>", "<STDIN>"}, nil
+	} else {
+		var err error
+		if fname, err = filepath.Abs(fname); err != nil {
+			return nil, errors.Wrap(err, "Failed to resolve path")
+		}
+		return &fileName{
+			base: filepath.Base(fname),
+			path: filepath.Dir(fname),
+			full: fname,
+		}, nil
 	}
-	return &fileName{
-		base: filepath.Base(fname),
-		path: filepath.Dir(fname),
-		full: fname,
-	}, nil
 }
 
 // Free the document and schema if applicable
@@ -173,7 +178,7 @@ func (fname *fileName) Full() string {
 func read_lines(path string) ([]string, error) {
 	file, err := os.Open(path)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 	defer file.Close()
 
@@ -186,14 +191,24 @@ func read_lines(path string) ([]string, error) {
 }
 
 // Can you tell that this is mostly directly pasted from a C program?
-func badly_escape_line_breaks(fname string) string {
-	b, err := ioutil.ReadFile(fname)
-	if err != nil {
-		util.DieE(1, err)
+func badly_escape_line_breaks(fname string) ([]string, string, error) {
+	var (
+		b   []byte
+		err error
+	)
+
+	if fname == "<STDIN>" {
+		if b, err = ioutil.ReadAll(os.Stdin); err != nil {
+			return nil, "", errors.WithStack(err)
+		}
+	} else {
+		if b, err = ioutil.ReadFile(fname); err != nil {
+			return nil, "", errors.WithStack(err)
+		}
 	}
 
 	var (
-		orig         = string(b)
+		orig         = strings.ReplaceAll(string(b), "\r\n", "\n")
 		repl         = ""
 		esc          = false
 		is_attribute = false
@@ -202,7 +217,6 @@ func badly_escape_line_breaks(fname string) string {
 	)
 
 	for i, l := 0, utf8.RuneCountInString(orig); i < l; i++ {
-	skip_increment:
 		ch := orig[i]
 
 		if is_comment {
@@ -210,10 +224,8 @@ func badly_escape_line_breaks(fname string) string {
 			if strings.HasPrefix(orig[i:], "-->") {
 				is_comment = false
 				repl += "-->"
-				// I think this is clearer than `i+=2; continue` and
-				// then having the for loop increment again
-				i += 3
-				goto skip_increment
+				i += 3 - 1
+				continue
 			} else {
 				repl += string(ch)
 			}
@@ -226,8 +238,8 @@ func badly_escape_line_breaks(fname string) string {
 			if strings.HasPrefix(orig[i+1:], "!--") {
 				is_comment = true
 				repl += "<!--"
-				i += 4
-				goto skip_increment
+				i += 4 - 1
+				continue
 			}
 
 		case '\\':
@@ -245,13 +257,6 @@ func badly_escape_line_breaks(fname string) string {
 				is_attribute = !is_attribute
 			}
 
-		case '\r':
-			i++
-			ch = orig[i]
-			if ch != '\n' {
-				util.Die(1, "Stray \\r in file...")
-			}
-			fallthrough
 		case '\n':
 			if is_attribute {
 				repl += "&#xA;"
@@ -264,5 +269,5 @@ func badly_escape_line_breaks(fname string) string {
 		esc = false
 	}
 
-	return repl
+	return strings.Split(orig, "\n"), repl, nil
 }

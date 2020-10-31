@@ -28,35 +28,20 @@ func NewAst() AST {
 /***************************************************************************************/
 
 // Accessor method: return the root node
-func (n *AstNode) Root() AST {
-	return n.root
-}
-
-func (n *AstNode) SetRoot(root AST) {
-	n.root = root
-}
+func (n *AstNode) Root() AST        { return n.root }
+func (n *AstNode) SetRoot(root AST) { n.root = root }
 
 // Accessor method: return the parent node
-func (n *AstNode) Parent() Node {
-	return n.parent
-}
-
-func (n *AstNode) SetParent(parent Node) {
-	n.parent = parent
-}
+func (n *AstNode) Parent() Node          { return n.parent }
+func (n *AstNode) SetParent(parent Node) { n.parent = parent }
 
 // Accessor method: return the mask of flags
-func (n *AstNode) Flags() uint64 {
-	return n.flags
-}
+func (n *AstNode) Flags() uint64        { return n.flags }
+func (n *AstNode) SetFlags(mask uint64) { n.flags = mask }
+func (n *AstNode) AddFlags(mask uint64) { n.flags |= mask }
 
-func (n *AstNode) SetFlags(mask uint64) {
-	n.flags = mask
-}
-
-func (n *AstNode) AddFlags(mask uint64) {
-	n.flags |= mask
-}
+func (n *AstNode) Children() []Node { return n.children }
+func (n *AstNode) initChildren()    { n.children = make([]Node, 0) }
 
 // Returns true if the node contains all provided flags
 func (n *AstNode) HasFlags(flags ...NodeFlag) bool {
@@ -68,20 +53,15 @@ func (n *AstNode) HasFlags(flags ...NodeFlag) bool {
 	return true
 }
 
-// Accessor method: return the slice containing child nodes
-func (n *AstNode) Children() []Node {
-	return n.children
-}
-
 /***************************************************************************************/
 
-func (n *AstNode) Init(parent Node) {
-	n.root = parent.Root()
-	n.parent = parent
-	n.flags = NFlagNone
-	n.children = make([]Node, 0)
+func (parent *AstNode) init(child Node) {
+	child.SetRoot(parent.Root())
+	child.SetParent(parent)
+	child.SetFlags(NFlagNone)
+	child.initChildren()
 
-	parent.AddChild(n)
+	parent.AddChild(child)
 }
 
 func (n *AstNode) AddChild(child Node) {
@@ -89,13 +69,8 @@ func (n *AstNode) AddChild(child Node) {
 	n.children = append(n.children, child)
 }
 
-func (root *RootNode) C() Node {
-	return root.current
-}
-
-func (root *RootNode) SetC(current Node) {
-	root.current = current
-}
+func (root *RootNode) C() Node           { return root.current }
+func (root *RootNode) SetC(current Node) { root.current = current }
 
 /***************************************************************************************/
 

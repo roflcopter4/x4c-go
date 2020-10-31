@@ -1,4 +1,4 @@
-package toX4C
+package translate
 
 import (
 	XMLtypes "github.com/lestrrat-go/libxml2/types"

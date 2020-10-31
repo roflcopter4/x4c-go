@@ -7,7 +7,7 @@ import (
 
 	"gopkg.in/ini.v1"
 
-	"github.com/roflcopter4/x4c/util"
+	"github.com/roflcopter4/x4c-go/util"
 )
 
 var Ini_Data map[string]string = nil

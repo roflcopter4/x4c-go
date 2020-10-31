@@ -1,7 +1,8 @@
 package ast
 
 type Node interface {
-	Init(Node)
+	init(Node)
+	initChildren()
 
 	Root() AST
 	Parent() Node
@@ -18,6 +19,7 @@ type Node interface {
 	AddXMLStatement(string) *XMLStatement
 	AddComment(string) *XMLComment
 	AddTextNode(string) *XMLText
+	AddConditionStatement(*Expression, int) *ConditionStatement
 }
 
 type AST interface {
