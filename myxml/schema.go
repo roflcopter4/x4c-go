@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/roflcopter4/x4c/config"
+	"github.com/roflcopter4/x4c-go/config"
 
 	XMLtypes "github.com/lestrrat-go/libxml2/types"
 	XMLxsd "github.com/lestrrat-go/libxml2/xsd"

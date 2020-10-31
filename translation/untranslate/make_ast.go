@@ -1,15 +1,4 @@
-package toXML
-
-import (
-	"fmt"
-	"io/ioutil"
-	"strings"
-
-	"github.com/davecgh/go-spew/spew"
-
-	"github.com/roflcopter4/x4c/ast"
-	"github.com/roflcopter4/x4c/util"
-)
+package untranslate
 
 /*
 #cgo pkg-config: libxml-2.0
@@ -39,30 +28,28 @@ static inline void MY_xmlFree(void *p) {
 
 //========================================================================================
 
-func init() {
-	spew.Config.Indent = "    "
-}
-
-func Translate(fname string) {
-	b, err := ioutil.ReadFile(fname)
-	if err != nil {
-		panic(err)
-	}
-
-	buf := strings.ReplaceAll(string(b), "\r\n", "\n")
-	tree := parse_buffer(buf)
-
-	spew.Config.DisableCapacities = true
-	spew.Config.DisablePointerAddresses = true
-	spew.Dump(tree)
-
-	doc := create_xml(tree)
-	out := doc.Dump(true)
-	// // out = strings.ReplaceAll(out, "&#10;", "\n")
-	// // out := go_to_hell(doc)
-	fmt.Print(out)
-	doc.Free()
-}
+//func init() {
+//	spew.Config.Indent = "    "
+//}
+//
+//func Translate(fname string) {
+//	b, err := ioutil.ReadFile(fname)
+//	if err != nil {
+//		panic(err)
+//	}
+//
+//	buf := strings.ReplaceAll(string(b), "\r\n", "\n")
+//	tree := parse_buffer(buf)
+//
+//	// spew.Dump(tree)
+//
+//	doc := create_xml(tree)
+//	out := doc.Dump(true)
+//	// out = strings.ReplaceAll(out, "&#10;", "\n")
+//	// out := go_to_hell(doc)
+//	fmt.Print(out)
+//	doc.Free()
+//}
 
 // func go_to_hell(doc *XMLdom.Document) string {
 //       var (
@@ -77,41 +64,36 @@ func Translate(fname string) {
 
 //========================================================================================
 
-func parse_buffer(buf string) ast.AST {
-	//p := new(MyParser)
-	//p.Buffer = buf
-	//p.Pretty = true
-	//p.a = ast.NewAst()
-	//p.block = p.a.Root()
-	//p.cur = p.a.Root()
-
-	a := ast.NewAst()
-	rd := strings.NewReader(buf)
-	_, err := ParseReader("nil", rd, GlobalStore("a", a), GlobalStore("block", a.Root()), GlobalStore("cur", a.Root()))
-
-	// lines := strings.Split(buf, "\n")
-
-	// if err := p.Init(); err != nil {
-	//       die_error(err, lines)
-	// }
-	//
-	// err := p.Parse()
-	if err != nil {
-		// die_error(err, lines)
-		util.DieE(1, err)
-	}
-
-	// p.PrintSyntaxTree()
-	// p.Execute()
-	// fmt.Println(p.Tokens())
-
-	return a
-}
-
-func getindent(i int) string {
-	return strings.Repeat(" ", i*4)
-}
-
+// func parse_buffer(buf string) ast.AST {
+//       p := new(MyParser)
+//       p.Buffer = buf
+//       p.Pretty = true
+//       p.a = ast.NewAst()
+//       p.block = p.a.Root()
+//       p.cur = p.a.Root()
+//
+//       lines := strings.Split(p.Buffer, "\n")
+//
+//       if err := p.Init(); err != nil {
+//             die_error(err, lines)
+//       }
+//
+//       err := p.Parse()
+//       if err != nil {
+//             die_error(err, lines)
+//       }
+//
+//       // p.PrintSyntaxTree()
+//       p.Execute()
+//       // fmt.Println(p.Tokens())
+//
+//       return p.a
+// }
+//
+// func getindent(i int) string {
+//       return strings.Repeat(" ", i*4)
+// }
+//
 // func die_error(e error, lines []string) {
 //       err := e.(*parseError)
 //       util.Die(1, "%s", my_parse_error(err, lines))
@@ -167,54 +149,54 @@ func getindent(i int) string {
 //
 //       return err
 // }
-
-func max(a, b int) int {
-	if a > b {
-		return a
-	} else {
-		return b
-	}
-}
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	} else {
-		return b
-	}
-}
-
-const NLINES = 5
-
-func whatever(lines []string, lineno, column int) string {
-	nlines := min(len(lines), NLINES)
-	ret := ""
-
-	if column > len(lines[lineno])+1 {
-		column = len(lines[lineno]) - 1
-	}
-
-	for i := nlines; i > 0; i-- {
-		if lineno-i < 0 {
-			continue
-		}
-		ret += "\033[0;33m" + lines[lineno-i] + "\033[0m\n"
-	}
-
-	ret += lines[lineno][:column-1]
-	ret += "\033[1;36m" + "<HERE>" +
-		"\033[0;33m" + lines[lineno][column-1:] +
-		"\033[0m" + "\n"
-
-	if lineno+NLINES+1 > len(lines) {
-		nlines = len(lines) - lineno
-	} else {
-		nlines = NLINES
-	}
-
-	for i := 0; i < nlines; i++ {
-		ret += "\033[0;33m" + lines[lineno+i+1] + "\033[0m\n"
-	}
-
-	return ret
-}
+//
+// func max(a, b int) int {
+//       if a > b {
+//             return a
+//       } else {
+//             return b
+//       }
+// }
+//
+// func min(a, b int) int {
+//       if a < b {
+//             return a
+//       } else {
+//             return b
+//       }
+// }
+//
+// const NLINES = 5
+//
+// func whatever(lines []string, lineno, column int) string {
+//       nlines := min(len(lines), NLINES)
+//       ret := ""
+//
+//       if column > len(lines[lineno])+1 {
+//             column = len(lines[lineno]) - 1
+//       }
+//
+//       for i := nlines; i > 0; i-- {
+//             if lineno-i < 0 {
+//                   continue
+//             }
+//             ret += "\033[0;33m" + lines[lineno-i] + "\033[0m\n"
+//       }
+//
+//       ret += lines[lineno][:column-1]
+//       ret += "\033[1;36m" + "<HERE>" +
+//             "\033[0;33m" + lines[lineno][column-1:] +
+//             "\033[0m" + "\n"
+//
+//       if lineno+NLINES+1 > len(lines) {
+//             nlines = len(lines) - lineno
+//       } else {
+//             nlines = NLINES
+//       }
+//
+//       for i := 0; i < nlines; i++ {
+//             ret += "\033[0;33m" + lines[lineno+i+1] + "\033[0m\n"
+//       }
+//
+//       return ret
+// }

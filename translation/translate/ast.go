@@ -1,4 +1,4 @@
-package toX4C
+package translate
 
 //import (
 //	"fmt"
@@ -10,8 +10,8 @@ package toX4C
 //	// XMLclib "github.com/lestrrat-go/libxml2/clib"
 //
 //	XMLtypes "github.com/lestrrat-go/libxml2/types"
-//	// "github.com/roflcopter4/x4c/myxml"
-//	// "github.com/roflcopter4/x4c/util"
+//	// "github.com/roflcopter4/x4c-go/myxml"
+//	// "github.com/roflcopter4/x4c-go/util"
 //)
 
 //func generic_node() {

@@ -3,17 +3,15 @@ package main
 import (
 	"os"
 
-	"github.com/roflcopter4/x4c/myxml"
-	"github.com/roflcopter4/x4c/util"
-
-	"github.com/roflcopter4/x4c/translate/toX4C"
-	"github.com/roflcopter4/x4c/translate/toXML"
-
 	"github.com/pborman/getopt"
+
+	"github.com/roflcopter4/x4c-go/myxml"
+	"github.com/roflcopter4/x4c-go/translation"
+	"github.com/roflcopter4/x4c-go/util"
 )
 
 var opt struct {
-	infile  string
+	infname string
 	outfile struct {
 		name string
 		fp   *os.File
@@ -29,38 +27,42 @@ func init() {
 	getopt.BoolVarLong(&opt.help, "help", 'h', "Display help")
 	getopt.BoolVarLong(&opt.dump, "dump", 'D', "Dump the tree")
 	getopt.BoolVarLong(&opt.validate, "validate", 'v', "Validate input with schema")
-	getopt.StringVarLong(&opt.infile, "file", 'f', "Input filename")
+	getopt.StringVarLong(&opt.infname, "file", 'f', "Input filename")
 	getopt.StringVarLong(&opt.outfile.name, "out", 'o', "Output filename")
 
-	getopt.EnumVarLong(&opt.operation, "operation", 'x', []string{"c", "d"}, "Operation")
+	getopt.EnumVarLong(&opt.operation, "operation", 'x', []string{"u", "t", "T"}, "Operation")
 }
 
 func main() {
-	handle_opts()
+	args := handle_opts()
 
 	switch opt.operation {
-	case "c":
-		compile()
-	case "d":
-		do_everything()
+	case "u":
+		translation.UnTranslate(opt.outfile.fp, opt.infname)
+	case "t":
+		do_translate()
+	case "T":
+		translation.TestLexer(args[0])
 	default:
 		util.Die(1, "Must specify an operation. Dipshit.")
 	}
 }
 
-func handle_opts() {
+func handle_opts() []string {
 	getopt.Parse()
+	args := getopt.Args()
+
 	if opt.help {
 		getopt.Usage()
 		os.Exit(0)
 	}
 
-	if opt.infile == "" {
+	if opt.infname == "" {
 		if getopt.NArgs() == 0 {
 			getopt.Usage()
 			os.Exit(1)
 		}
-		opt.infile = getopt.Args()[0]
+		opt.infname = args[0]
 	}
 
 	if str_eq_any(opt.outfile.name, "", "-") {
@@ -72,16 +74,15 @@ func handle_opts() {
 		}
 		opt.outfile.fp = fp
 	}
+
+	return args
 }
 
-func compile() {
-	toXML.Translate(opt.infile)
-}
-
-func do_everything() {
-	doc, err := myxml.New_Document(opt.infile)
+func do_translate() {
+	doc, err := myxml.New_Document(opt.infname)
 	if err != nil {
 		util.DieE(2, err)
+		// panic(err)
 	}
 	defer doc.Free()
 
@@ -89,30 +90,19 @@ func do_everything() {
 		err = doc.GetSchema()
 		if err != nil {
 			util.DieE(2, err)
+			// panic(err)
 		}
 
 		err = doc.ValidateSchema()
 		if err != nil {
 			util.DieE(2, err)
+			// panic(err)
 		}
 	}
 
-	// doc.GetSchema()
-	// d2, err := myxml.New_Document(opt.infile)
-	// d2.SetSchema(doc.Schema())
-	// doc.SetSchema(nil)
-	// doc.Free()
-	//
-	// dumb.TestReader(d2)
-	//
-	// d2.Free()
-
-	toX4C.TestReader(opt.outfile.fp, doc)
-
-	// err = dumb.Dumb(doc, opt.outfile.fp)
-	// if err != nil {
-	//       util.PanicE(err)
-	// }
+	// translate.TestReader(opt.outfile.fp, doc)
+	// translation.TestTranslate(opt.outfile.fp, doc)
+	translation.Translate(opt.outfile.fp, doc)
 }
 
 func str_eq_any(cmp string, lst ...string) bool {
