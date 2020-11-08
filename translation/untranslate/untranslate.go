@@ -11,7 +11,6 @@ import (
 
 	"github.com/roflcopter4/x4c-go/translation/ast"
 	"github.com/roflcopter4/x4c-go/translation/untranslate/parser"
-	"github.com/roflcopter4/x4c-go/util"
 )
 
 func init() {
@@ -22,8 +21,9 @@ func Translate(outfp *os.File, fname string) {
 	tree := parse_file(fname)
 	doc := create_xml(tree)
 	out := doc.Dump(true)
-	// out = strings.ReplaceAll(out, "&#10;", "\n")
 	doc.Free()
+
+	out = strings.ReplaceAll(out, "&#10;", "\n")
 	outfp.WriteString(out)
 }
 
@@ -92,7 +92,9 @@ func (l *listener) ExitXmlStmt(c *parser.XmlStmtContext) {
 	stmt := l.block.AddXMLStatement(c.GetIdent().GetText())
 	l.cur = stmt
 
-	add_attrs(stmt, c.GetLst().GetChildren())
+	if lst := c.GetLst(); lst != nil {
+		add_attrs(stmt, lst.GetChildren())
+	}
 }
 
 func (l *listener) ExitConditionStmt(c *parser.ConditionStmtContext) {
@@ -102,13 +104,11 @@ func (l *listener) ExitConditionStmt(c *parser.ConditionStmtContext) {
 	if lst := c.GetLst(); lst != nil {
 		ctx := lst.(*parser.ConditionExprContext)
 		if ctx.AttributeList() != nil {
-			// add_attrs(stmt, lst.GetChild(0).GetChildren())
 			add_attrs(stmt, ctx.AttributeList().GetChildren())
 		} else {
-			dumb := ctx.Get_DumbExpr()
+			dumb := ctx.DumbExpr()
 			val := dumb.GetText()
 			val = val[1 : len(val)-1]
-			util.Eprintf("Have << %v >>\n", val)
 			stmt.AddAttribute("value", ast.NewExpression(val))
 		}
 	}
@@ -139,7 +139,6 @@ func (l *listener) ExitCommentStmt(c *parser.CommentStmtContext) {
 func add_attrs(stmt *ast.XMLStatement, lst []antlr.Tree) {
 	for _, child := range lst {
 		switch a := child.(type) {
-		// a := child.(parser.IAttributeContext)
 		case parser.IAttributeContext:
 			val := a.GetVal().GetText()
 			val = strings.Trim(val, "\"")

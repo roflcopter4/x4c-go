@@ -40,6 +40,13 @@ func (n *AstNode) Flags() uint64        { return n.flags }
 func (n *AstNode) SetFlags(mask uint64) { n.flags = mask }
 func (n *AstNode) AddFlags(mask uint64) { n.flags |= mask }
 
+func (n *AstNode) NumChildren() int {
+	if n.children == nil {
+		return 0
+	} else {
+		return len(n.children)
+	}
+}
 func (n *AstNode) Children() []Node { return n.children }
 func (n *AstNode) initChildren()    { n.children = make([]Node, 0) }
 
@@ -69,8 +76,18 @@ func (n *AstNode) AddChild(child Node) {
 	n.children = append(n.children, child)
 }
 
-func (root *RootNode) C() Node           { return root.current }
-func (root *RootNode) SetC(current Node) { root.current = current }
+func (r *RootNode) C() Node           { return r.current }
+func (r *RootNode) SetC(current Node) { r.current = current }
+func (r *RootNode) StartNode() Node {
+	switch r.NumChildren() {
+	case 0:
+		return nil
+	case 1:
+		return r.Children()[0]
+	default:
+		panic("Invalid root node!")
+	}
+}
 
 /***************************************************************************************/
 

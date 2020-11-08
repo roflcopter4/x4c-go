@@ -24,6 +24,7 @@ type Node interface {
 
 type AST interface {
 	Node
-	C() Node   // Current node
-	SetC(Node) // Set current node
+	C() Node         // Current node
+	SetC(Node)       // Set current node
+	StartNode() Node // Get the first real node
 }

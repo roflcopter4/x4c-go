@@ -75,9 +75,9 @@ func Translate(outfp *os.File, doc myxml.DocWrapper) {
 
 func (b *builder) StartElement(node XMLtypes.Node) {
 	nn := node.NodeName()
-	i := sort.SearchStrings(xs_eids, nn)
+	i := sort.SearchStrings(special_idents, nn)
 
-	if i < len(xs_eids) && xs_eids[i] == nn {
+	if i < len(special_idents) && special_idents[i] == nn {
 		switch nn {
 		case "do_if":
 			b.Conditional(node, ast.ConditionIf)
@@ -114,16 +114,9 @@ func (b *builder) GenericXML(node XMLtypes.Node) {
 }
 
 func (b *builder) Conditional(node XMLtypes.Node, ctype int) {
-	var (
-		expr *ast.Expression = nil
-		// elem                 = node.(XMLtypes.Element)
-	)
+	var expr *ast.Expression = nil
 
 	if ctype == ast.ConditionIf || ctype == ast.ConditionElseif {
-		// attr, _ := elem.Attributes()
-		// expr = ast.NewExpression(get_attr_string(attr))
-
-		// expr.XML = new(ast.XMLStatement);
 		expr = new(ast.Expression)
 		nattr := b.rd.AttributeCount()
 		b.rd.MoveToAttributeNo(0)
@@ -137,10 +130,10 @@ func (b *builder) Conditional(node XMLtypes.Node, ctype int) {
 			for i := 0; i < nattr; i++ {
 				b.rd.MoveToAttributeNo(i)
 				if node, _ := b.rd.CurrentNode(); node != nil {
-					e := ast.XMLAttribute{Name: b.rd.Name(), Val: ast.NewExpression(b.rd.Value())}
-					expr.XML[i] = &e
-					// expr := ast.NewExpression(b.rd.Value())
-					// stmt.AddAttribute(b.rd.Name(), expr)
+					expr.XML[i] = &ast.XMLAttribute{
+						Name: b.rd.Name(),
+						Val:  ast.NewExpression(b.rd.Value()),
+					}
 				}
 			}
 		}

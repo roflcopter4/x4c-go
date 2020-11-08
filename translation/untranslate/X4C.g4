@@ -1,7 +1,7 @@
 grammar X4C;
 
 /****************************************************************************************/
-/* Tokens */
+/* Lexer */
 
 /* Keywords */
 Keyword_If:     'if';
@@ -16,6 +16,9 @@ fragment IdentHead: [a-zA-Z_];
 fragment IdentChar: [a-zA-Z0-9_];
 fragment SP: [ ];
 fragment INT: [0-9];
+fragment HEX: [0-9a-fA-F];
+fragment Sqt: ['];
+fragment Dqt: ["];
 
 /* These are the types formally defined in the schemas. */
 
@@ -27,10 +30,10 @@ Variable: '$' IdentChar+;
 TextDbRef: '{' [1-9][0-9]* ',' SP* [1-9][0-9]* '}';
 
 Operator: '==' | '!=' | '[]'
-	| '+' | '-' | '*' | '/' | '%' | '^' | '!' | '(' | ')' | '{' | '}' | ';' | '.'
-	| '@' | '[' | ']' | '?' | '=' | ',' | ':';
+	| '+' | '-' | '*' | '/' | '%' | '^' | '='
+	| ';' | ':' | '!' | '@' | '?' | '.' | ','
+	| '(' | ')' | '{' | '}' | '[' | ']';
 
-/* Stupidity: '(<' | '>)'; */
 DumbExpr: '(' (DumbExpr | ~[()])+ ')';
 
 /* Numbers and lots of etc */
@@ -42,12 +45,12 @@ HealthValue:   INT+ [hH]'p';
 
 Float: INT+ '.' INT* ([lL]?[fF])?;
 Integer: INT+;
-SString: ['] ('\\'['] | ~['])* ['];
+SString: Sqt ('\\'Sqt | ~Sqt)* Sqt;
 
 /* And my types... */
 Identifier: IdentHead IdentChar*;
 
-AttributeValue: '"' (~'"' | '\\"')* '"';
+AttributeValue: '"' ('\\"' | ~'"')* '"';
 
 LineComment:  '//' .*? Newline;
 BlockComment: '/*' .*? '*/';
@@ -57,7 +60,7 @@ Whitespace: [\t ]+          -> skip;
 
 
 /****************************************************************************************/
-/* Grammar */
+/* Parser */
 
 document
 	: fileTypeStmt commentStmt* EOF
@@ -90,17 +93,12 @@ commentStmt
 
 /* Generic XML statement */
 xmlStmt
-	: Ident=Identifier '<' Lst=attributeList '>'
+	: Ident=Identifier '<' Lst=attributeList? '>'
 	;
 
-//attributeList
-//	: attribute*
-//	;
-
 attributeList
-    : attributeList ',' attribute
+    : attributeList attribute
     | attribute
-    | /* empty */
     ;
 
 attribute
@@ -119,9 +117,10 @@ conditionStmt
 	| Ident='else'
 	;
 
+/* As a special case if/elseif/else will allow xml style statements for now. */
 conditionExpr
 	: '<' attributeList '>'
-	| DumbExpr { fmt.Printf("%v\n", $DumbExpr); }
+	| DumbExpr /* FIXME: This sucks */
 	;
 
 
@@ -144,7 +143,9 @@ conditionExpr
 //	;
 
 /*======================================================================================*/
-/* Attempt number 1 at doing actual expressions. This will fail. */
+/* Attempt number 1 at doing actual expressions. This will fail.
+ * ...
+ * It failed. */
 
 //expression_list
 //	: expression_list ',' expression

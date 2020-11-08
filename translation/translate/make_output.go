@@ -16,26 +16,26 @@ import (
 	"github.com/roflcopter4/x4c-go/util"
 )
 
-var Default_Indent = 4
+const DEFAULT_INDENT = 4
+
+var Indent_Size = DEFAULT_INDENT
 
 type cur_data struct {
-	tree   ast.AST
-	lines  []string
-	depth  int
-	indent int
+	lines       []string
+	tree        ast.AST
+	depth       int
+	indent_size int
 }
 
 func make_output(tree ast.AST) []string {
 	data := &cur_data{
-		tree:   tree,
-		lines:  make([]string, 0, 128),
-		depth:  0,
-		indent: Default_Indent,
+		lines:       make([]string, 0, 256),
+		tree:        tree,
+		depth:       0,
+		indent_size: Indent_Size,
 	}
 
-	node := tree.Root().Children()[0].(*ast.XMLStatement)
-	data.walk_tree(node)
-
+	data.walk_tree(tree.StartNode())
 	return data.lines
 }
 
@@ -88,10 +88,11 @@ func (data *cur_data) handle_xml_statement(node *ast.XMLStatement) string {
 	str := data.get_indent() + node.Name + "<"
 
 	for i, attr := range node.Attributes {
-		if i > 0 {
-			str += ", "
+		if i == 0 {
+			str += fmt.Sprintf("%s=\"%s\"", attr.Name, attr.Val.Raw)
+		} else {
+			str += fmt.Sprintf(" %s=\"%s\"", attr.Name, attr.Val.Raw)
 		}
-		str += fmt.Sprintf("%s=\"%s\"", attr.Name, attr.Val.Raw)
 	}
 
 	return str + ">"
@@ -117,15 +118,15 @@ func (data *cur_data) handle_conditional_statement(node *ast.ConditionStatement)
 //========================================================================================
 
 func (data *cur_data) get_indent() string {
-	return strings.Repeat(" ", data.depth*data.indent)
+	return strings.Repeat(" ", data.depth*data.indent_size)
 }
 
 func condition_expression(expr *ast.Expression) string {
-	ret := ""
+	var str string
 	if expr.XML == nil {
-		ret = fmt.Sprintf("(%s)", expr.Raw)
+		str = fmt.Sprintf("(%s)", expr.Raw)
 	} else {
-		ret = fmt.Sprintf("<%s>", expr.Raw)
+		str = fmt.Sprintf("<%s>", expr.Raw)
 	}
-	return ret
+	return str
 }

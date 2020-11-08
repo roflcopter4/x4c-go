@@ -120,9 +120,9 @@ func handle_comment(out *output, node XMLtypes.Node) {
 
 func handle_start_element(out *output, node XMLtypes.Node) {
 	nn := node.NodeName()
-	i := sort.SearchStrings(xs_eids, nn)
+	i := sort.SearchStrings(special_idents, nn)
 
-	if i < len(xs_eids) && xs_eids[i] == nn {
+	if i < len(special_idents) && special_idents[i] == nn {
 		// Handle special recognized keywords
 		var (
 			str             = make_indent(out)
@@ -160,7 +160,7 @@ func handle_start_element(out *output, node XMLtypes.Node) {
 func get_attr_string(lst []XMLtypes.Attribute) (ret string) {
 	for i, a := range lst {
 		if i > 0 {
-			ret += ", "
+			ret += " "
 		}
 		ret += fmt.Sprintf("%s=\"%s\"", a.NodeName(), a.NodeValue())
 	}
