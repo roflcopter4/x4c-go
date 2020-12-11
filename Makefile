@@ -1,5 +1,10 @@
 #
-# I'm very lazy
+# Makefile for BSD Make (bmake)
+# 
+# 'Installing' all the packages is critical for my wonky Neovim highlighting
+# plugin. This just makes it easier, and also generates the necessary antlr
+# output. BSD Make has a functional for loop, saving several whole seconds (!)
+# of copy-pasting. Never leave home without it.
 #
 
 .SUFFIXES: .g4 .go
