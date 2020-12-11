@@ -30,7 +30,7 @@ func init() {
 	getopt.StringVarLong(&opt.infname, "file", 'f', "Input filename")
 	getopt.StringVarLong(&opt.outfile.name, "out", 'o', "Output filename")
 
-	getopt.EnumVarLong(&opt.operation, "operation", 'x', []string{"u", "t", "T"}, "Operation")
+	getopt.EnumVarLong(&opt.operation, "operation", 'x', []string{"u", "t", "T", "s", "S"}, "Operation")
 }
 
 func main() {
@@ -43,6 +43,10 @@ func main() {
 		do_translate()
 	case "T":
 		translation.TestLexer(args[0])
+	case "s":
+		translation.TestScriptLexer(args[0], true)
+	case "S":
+		translation.TestScriptLexer(args[0], false)
 	default:
 		util.Die(1, "Must specify an operation. Dipshit.")
 	}

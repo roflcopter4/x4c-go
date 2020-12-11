@@ -155,3 +155,13 @@ func (b *builder) add_attributes(stmt *ast.XMLStatement) {
 		}
 	}
 }
+
+func get_attr_string(lst []XMLtypes.Attribute) (ret string) {
+	for i, a := range lst {
+		if i > 0 {
+			ret += " "
+		}
+		ret += fmt.Sprintf("%s=\"%s\"", a.NodeName(), a.NodeValue())
+	}
+	return
+}

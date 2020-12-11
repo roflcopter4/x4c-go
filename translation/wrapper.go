@@ -23,3 +23,7 @@ func UnTranslate(outfp *os.File, fname string) {
 func TestLexer(str string) {
 	untranslate.TestLexer(str)
 }
+
+func TestScriptLexer(str string, isfile bool) {
+	untranslate.TestScriptLexer(str, isfile)
+}

@@ -10,11 +10,15 @@ import (
 	"github.com/davecgh/go-spew/spew"
 
 	"github.com/roflcopter4/x4c-go/translation/ast"
-	"github.com/roflcopter4/x4c-go/translation/untranslate/parser"
+	"github.com/roflcopter4/x4c-go/translation/untranslate/gen/parser"
 )
 
 func init() {
 	spew.Config.Indent = "  "
+	spew.Config.DisableCapacities = true
+	// spew.Config.DisableMethods = true
+	// spew.Config.DisablePointerMethods = true
+	spew.Config.DisablePointerAddresses = true
 }
 
 func Translate(outfp *os.File, fname string) {
@@ -106,9 +110,10 @@ func (l *listener) ExitConditionStmt(c *parser.ConditionStmtContext) {
 		if ctx.AttributeList() != nil {
 			add_attrs(stmt, ctx.AttributeList().GetChildren())
 		} else {
-			dumb := ctx.DumbExpr()
+			// dumb := ctx.DumbExpr()
+			dumb := ctx.Expression()
 			val := dumb.GetText()
-			val = val[1 : len(val)-1]
+			// val = val[1 : len(val)-1]
 			stmt.AddAttribute("value", ast.NewExpression(val))
 		}
 	}

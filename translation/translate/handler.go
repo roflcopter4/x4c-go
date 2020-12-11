@@ -157,16 +157,6 @@ func handle_start_element(out *output, node XMLtypes.Node) {
 //========================================================================================
 // Util
 
-func get_attr_string(lst []XMLtypes.Attribute) (ret string) {
-	for i, a := range lst {
-		if i > 0 {
-			ret += " "
-		}
-		ret += fmt.Sprintf("%s=\"%s\"", a.NodeName(), a.NodeValue())
-	}
-	return
-}
-
 func make_indent(out *output) string {
 	return strings.Repeat(" ", out.spaces*out.depth)
 }
