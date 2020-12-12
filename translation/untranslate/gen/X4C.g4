@@ -4,12 +4,8 @@ grammar X4C;
 /* Lexer */
 
 /* Keywords */
-Keyword_If:     'if';
-Keyword_Elseif: 'elseif';
-Keyword_Else:   'else';
-//Keyword_Logic: 'ge' | 'le' | 'gt' | 'lt' | 'and' | 'or' | 'not';
-Keyword_Builtin: 'sqrt';
-
+Keyword_Conditional: 'if' | 'elseif' | 'else' | 'while' ;
+BuiltinFunction : 'sin' | 'cos' | 'sqrt' | 'log' | 'exp';
 Keyword: 'in' | 'then' | 'nil' | 'chance';
 
 fragment IdentHead: [a-zA-Z_];
@@ -24,38 +20,38 @@ fragment HEX: [0-9a-fA-F];
 ////        { ( Initial char     ) | ( String - may start with # ) }  { ( Non string character              ) | ( Another string?  dot??    ) }/Repeat
 //Expression: ( [A-Za-z0-9_$@+\-({[] | ('#'?['] (~['\\] | '.')* [']) )  ( [A-Za-z0-9_$!?@=<>;,.+\-*/%^(){}[\] ] | ('#'?['] (~['\\] | '.')* [']) )*;
 
-Variable: '$' IdentChar+;
 TextDbRef: '{' [1-9][0-9]* ',' SP* [1-9][0-9]* '}';
 
-Operator: '[]'
-	| '='
+Operator: '='
 	| ';' | ':' | '.' | ','
 	| '(' | ')' | '{' | '}' | '[' | ']';
 
 AdditiveOp       : '+' | '-' ;
-MultiplicativeOp : '^' | '*' | '/' | '%' ;
+MultiplicativeOp : '*' | '/' | '%' ;
+PowerOp          : '^';
 UnaryPostfixOp   : '?';
 UnaryOp          : '@' | 'typeof' ;
 NegationOp       : 'not' | '!' ;
-RelationalOp     : '==' | '!=' | 'le' | 'ge' | 'lt' | 'gt' /*| '<=' | '>=' | '<' | '>'*/ ;
-LogicalOp        : 'and' | 'or' | '&&' | '||' ;
-
-//DumbExpr: '(' (DumbExpr | ~[()])+ ')';
+ComparitiveOp    : 'le' | 'ge' | 'lt' | 'gt' | '<=' | '>=' | '<' | '>' ;
+EqualityOp       : '==' | '!=' ;
+AndOp            : 'and' | '&&' ; // I may or may not allow 'C' style logical operators.
+OrOp             : 'or' | '||' ;
 
 /* Numbers and lots of etc */
-TimeValue:     INT+ ([mM]'in' | [mM]'s' | [hH] | [sS]);
-DistanceValue: INT+ ('m' | [kK]'m');
-CreditValue:   INT+ [cC]'r';
-DegreeValue:   INT+ [dD]'eg';
-HealthValue:   INT+ [hH]'p';
+TimeValue:     INT+ ('ms' | 's' | 'min' | 'h');
+DistanceValue: INT+ ('m'|'km');
+CreditValue:   INT+ ('ct'|'Cr');
+DegreeValue:   INT+ ('deg'|'rad');
+HealthValue:   INT+ 'hp';
 
-Float  : (INT+ '.' INT* | '.' INT+) ([lL]?[fF])?
-       | INT+ [lL]?[fF];
+Float  : (INT+ '.' INT* | '.' INT+) ('f'|'LF')?
+       | INT+ ('f'|'LF');
 
-Integer: INT+;
+Integer: INT+ [iL]?;
 SString: ['] ('\\'['] | ~['])* ['];
 
 /* And my types... */
+Variable: '$' IdentChar+;
 Identifier: IdentHead IdentChar*;
 AttributeValue: '"' (~'"' | '\\"')* '"';
 
@@ -120,36 +116,40 @@ specialXmlIdentifier
 	;
 
 keywordClash
-        : 'chance' | 'in'
+        : 'chance' | 'in' | 'table'
         ;
 
-/* Condition statement: if/elseif/else. Sanity checking the if/else chain is
- * handled in the code because I couldn't think of a way to do it here. */
+/* Condition statement: if/elseif/else/while. Sanity checking the if/else chain
+ * is handled in the code because I couldn't think of a way to do it here. */
 conditionStmt
 	: Ident='if'     Lst=conditionExpr
 	| Ident='elseif' Lst=conditionExpr
+        | Ident='while'  Lst=conditionExpr
 	| Ident='else'
 	;
 
-/* As a special case if/elseif/else will allow xml style statements for now. */
+/* As a special case conditions will allow xml style statements for now. */
 conditionExpr
 	: '<' attributeList '>'
-	//| DumbExpr /* FIXME: This sucks */
         | '(' expression ')'
 	;
 
 /****************************************************************************************/
 
 expression
-        : object                                              # object_expression
-        | (AdditiveOp|UnaryOp) expression                     # unary_expression
-        |<assoc=right> expression UnaryPostfixOp              # unary_postfix_expression
-        | 'if' expression 'then' expression 'else' expression # terniary_expression
-        | expression MultiplicativeOp expression              # multiplicative_expression
-        | expression AdditiveOp expression                    # additive_expression
-        | NegationOp expression                               # negation_expression
-        | expression RelationalOp expression                  # relational_expression
-        | expression LogicalOp expression                     # logical_expression
+        : object                                                 # object_expression
+        | (AdditiveOp|UnaryOp) expression                        # unary_expression
+        |<assoc=right> expression UnaryPostfixOp                 # unary_postfix_expression
+        | NegationOp expression                                  # negation_expression
+        | BuiltinFunction '(' expression ')'                     # builtin_function_expression
+        | expression PowerOp expression                          # power_expression
+        | expression MultiplicativeOp expression                 # multiplicative_expression
+        | expression AdditiveOp expression                       # additive_expression
+        | expression ComparitiveOp expression                    # comparitive_expression
+        | expression EqualityOp expression                       # equality_expression
+        | expression AndOp expression                            # and_expression
+        | expression OrOp expression                             # or_expression
+        | 'if' expression 'then' expression ('else' expression)? # terniary_expression
 	;
 
 predicate
@@ -172,10 +172,9 @@ obj_fragment
         ;
 
 myterminal
-        : identifier
-	//| '[' expression_list ']'
-	//| table_expression
-	//| list_expression
+        : '[' (expression (',' expression)*)? ']'
+        | 'table' '[' (expression (',' expression)*)? ']'
+        | identifier
 	| literal
 	;
 
@@ -189,6 +188,7 @@ literal
 	| TimeValue
 	| CreditValue
         | TextDbRef
+        | 'null'
 	;
 
 identifier

@@ -39,50 +39,61 @@ type listener struct {
 	a     ast.AST
 	cur   ast.Node
 	block ast.Node
+
+	cs  antlr.CharStream
+	lex *parser.X4CLexer
+	par *parser.X4CParser
 }
 
-func TestLexer(str string) {
-	// var (
-	//       is    = antlr.NewInputStream(str)
-	//       lexer = parser.NewX4CLexer(is)
-	// )
-	//
-	// for {
-	//       t := lexer.NextToken()
-	//       if t.GetTokenType() == antlr.TokenEOF {
-	//             break
-	//       }
-	//       fmt.Printf("%s (%q)\n", lexer.SymbolicNames[t.GetTokenType()], t.GetText())
-	// }
-	//
+func TestLexer(str string, isfile bool) {
+	var (
+		cs    antlr.CharStream
+		lexer *parser.X4CLexer
+	)
 
-	lexer := get_lexer(str)
+	if isfile {
+		cs, lexer = get_lexer(str)
+
+	} else {
+		cs = antlr.NewInputStream(str)
+		lexer = parser.NewX4CLexer(cs)
+	}
+
 	for {
 		t := lexer.NextToken()
 		if t.GetTokenType() == antlr.TokenEOF {
 			break
 		}
-		fmt.Printf("%s (%q)\n",
-			lexer.SymbolicNames[t.GetTokenType()], t.GetText())
+		ind := t.GetStart()
+		fmt.Printf("%s (%q) -> (%d: %v)\n",
+			lexer.SymbolicNames[t.GetTokenType()], t.GetText(), ind, cs.GetText(t.GetStart(), t.GetStop()))
 	}
+	fmt.Println(cs.GetText(0, cs.Size()))
 }
 
 func parse_file(fname string) ast.AST {
 	var (
-		lexer  = get_lexer(fname)
-		stream = antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel)
-		p      = parser.NewX4CParser(stream)
-		l      = new(listener)
+		cs, lexer = get_lexer(fname)
+		stream    = antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel)
+		par       = parser.NewX4CParser(stream)
+
+		l = &listener{
+			a:   ast.NewAst(),
+			cs:  cs,
+			lex: lexer,
+			par: par,
+		}
 	)
 
-	l.a = ast.NewAst()
 	l.cur = l.a.Root()
 	l.block = l.a.Root()
 
-	antlr.ParseTreeWalkerDefault.Walk(l, p.Document())
+	antlr.ParseTreeWalkerDefault.Walk(l, par.Document())
 
 	return l.a
 }
+
+/****************************************************************************************/
 
 func (l *listener) EnterCompoundStmt(c *parser.CompoundStmtContext) {
 	l.block = l.cur
@@ -110,10 +121,8 @@ func (l *listener) ExitConditionStmt(c *parser.ConditionStmtContext) {
 		if ctx.AttributeList() != nil {
 			add_attrs(stmt, ctx.AttributeList().GetChildren())
 		} else {
-			// dumb := ctx.DumbExpr()
-			dumb := ctx.Expression()
-			val := dumb.GetText()
-			// val = val[1 : len(val)-1]
+			expr := ctx.Expression()
+			val := l.cs.GetText(expr.GetStart().GetStart(), expr.GetStop().GetStop())
 			stmt.AddAttribute("value", ast.NewExpression(val))
 		}
 	}
@@ -145,8 +154,7 @@ func add_attrs(stmt *ast.XMLStatement, lst []antlr.Tree) {
 	for _, child := range lst {
 		switch a := child.(type) {
 		case parser.IAttributeContext:
-			val := a.GetVal().GetText()
-			val = strings.Trim(val, "\"")
+			val := strings.Trim(a.GetVal().GetText(), "\"")
 			expr := ast.NewExpression(val)
 			stmt.AddAttribute(a.GetIdent().GetText(), expr)
 
@@ -156,7 +164,7 @@ func add_attrs(stmt *ast.XMLStatement, lst []antlr.Tree) {
 	}
 }
 
-func get_lexer(fname string) *parser.X4CLexer {
+func get_lexer(fname string) (antlr.CharStream, *parser.X4CLexer) {
 	var charstream antlr.CharStream
 
 	if fname == "-" {
@@ -173,5 +181,5 @@ func get_lexer(fname string) *parser.X4CLexer {
 		charstream = fs
 	}
 
-	return parser.NewX4CLexer(charstream)
+	return charstream, parser.NewX4CLexer(charstream)
 }

@@ -16,7 +16,7 @@ import (
 	"github.com/roflcopter4/x4c-go/util"
 )
 
-const DEFAULT_INDENT = 4
+const DEFAULT_INDENT = 2
 
 var Indent_Size = DEFAULT_INDENT
 
@@ -108,6 +108,8 @@ func (data *cur_data) handle_conditional_statement(node *ast.ConditionStatement)
 		str += "elseif " + condition_expression(node.Expr)
 	case ast.ConditionElse:
 		str += "else"
+	case ast.ConditionWhile:
+		str += "while " + condition_expression(node.Expr)
 	default:
 		panic(fmt.Errorf("Invalid condition type (%d)", node.Type))
 	}

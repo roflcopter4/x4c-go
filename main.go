@@ -30,7 +30,7 @@ func init() {
 	getopt.StringVarLong(&opt.infname, "file", 'f', "Input filename")
 	getopt.StringVarLong(&opt.outfile.name, "out", 'o', "Output filename")
 
-	getopt.EnumVarLong(&opt.operation, "operation", 'x', []string{"u", "t", "T", "s", "S"}, "Operation")
+	getopt.EnumVarLong(&opt.operation, "operation", 'x', []string{"u", "t", "q", "Q", "s", "S"}, "Operation")
 }
 
 func main() {
@@ -41,8 +41,10 @@ func main() {
 		translation.UnTranslate(opt.outfile.fp, opt.infname)
 	case "t":
 		do_translate()
-	case "T":
-		translation.TestLexer(args[0])
+	case "q":
+		translation.TestLexer(args[0], true)
+	case "Q":
+		translation.TestLexer(args[0], false)
 	case "s":
 		translation.TestScriptLexer(args[0], true)
 	case "S":

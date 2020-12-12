@@ -4,17 +4,9 @@ grammar Script;
 /* Lexer */
 
 /* Keywords */
-//Keyword_If:     'if';
-//Keyword_Elseif: 'elseif';
-//Keyword_Else:   'else';
-//Keyword_Logic: 'ge' | 'le' | 'gt' | 'lt' | 'and' | 'or' | 'not';
-//Keyword_Builtin: 'sqrt';
-
-Keyword : 'in' | 'then' | 'nil'
-        //| 'ge' | 'le' | 'gt' | 'lt' | 'and' | 'or' | 'not'
-        | 'if' | 'elseif' | 'else'
-        | 'chance'
-        ;
+Keyword_Conditional: 'if' | 'elseif' | 'else' | 'while' ;
+BuiltinFunction : 'sin' | 'cos' | 'sqrt' | 'log' | 'exp';
+Keyword: 'in' | 'then' | 'nil' | 'chance';
 
 fragment IdentHead: [a-zA-Z_];
 fragment IdentChar: [a-zA-Z0-9_];
@@ -22,7 +14,6 @@ fragment SP: [ ];
 fragment INT: [0-9];
 fragment HEX: [0-9a-fA-F];
 
-Variable: '$' IdentChar+;
 TextDbRef: '{' [1-9][0-9]* ',' SP* [1-9][0-9]* '}';
 
 //Operator: '==' | '!=' | '[]'
@@ -30,35 +21,38 @@ TextDbRef: '{' [1-9][0-9]* ',' SP* [1-9][0-9]* '}';
 //	| ';' | ':' | '!' | '@' | '?' | '.' | ','
 //	| '(' | ')' | '{' | '}' | '[' | ']';
 
-Operator: '[]'
-	| '='
+Operator: '='
 	| ';' | ':' | '.' | ','
 	| '(' | ')' | '{' | '}' | '[' | ']';
 
 AdditiveOp       : '+' | '-' ;
-MultiplicativeOp : '^' | '*' | '/' | '%' ;
+MultiplicativeOp : '*' | '/' | '%' ;
+PowerOp          : '^';
 UnaryPostfixOp   : '?';
-UnaryOp          : '@' | 'typeof' ;
+UnaryOp          : '@' | 'typeof' ; // Supposedly negation has the same precidence as other unary operators? Madness. MADNESS!
 NegationOp       : 'not' | '!' ;
-RelationalOp     : '==' | '!=' | 'le' | 'ge' | 'lt' | 'gt' | '<=' | '>=' | '<' | '>' ;
-LogicalOp        : 'and' | 'or' | '&&' | '||' ;
+ComparitiveOp    : 'le' | 'ge' | 'lt' | 'gt' | '<=' | '>=' | '<' | '>' ;
+EqualityOp       : '==' | '!=' ;
+AndOp            : 'and' | '&&' ;
+OrOp             : 'or' | '||' ;
 
 //BuiltinFunction  : 'sqrt' ;
 
 /* Numbers and lots of etc */
-TimeValue:     INT+ ([mM]'in' | [mM]'s' | [hH] | [sS]);
-DistanceValue: INT+ ('m' | [kK]'m');
-CreditValue:   INT+ [cC]'r';
-DegreeValue:   INT+ [dD]'eg';
-HealthValue:   INT+ [hH]'p';
+TimeValue:     INT+ ('ms' | 's' | 'min' | 'h');
+DistanceValue: INT+ ('m'|'km');
+CreditValue:   INT+ ('ct'|'Cr');
+DegreeValue:   INT+ ('deg'|'rad');
+HealthValue:   INT+ 'hp';
 
-Float  : (INT+ '.' INT* | '.' INT+) ([lL]?[fF])?
-       | INT+ [lL]?[fF];
+Float  : (INT+ '.' INT* | '.' INT+) ('f'|'LF')?
+       | INT+ ('f'|'LF');
 
-Integer: INT+;
+Integer: INT+ [iL]?;
 SString: ['] ('\\'['] | ~['])* ['];
 
 /* And my types... */
+Variable: '$' IdentChar+;
 Identifier: IdentHead IdentChar*;
 
 LineComment:  '//' .*? Newline;
@@ -77,16 +71,34 @@ statement
         | expression predicate?               # simple_statement
         ;
 
+//expression
+//        : 'if' expression 'then' expression 'else' expression # terniary_expression
+//        |<assoc=right> expression LogicalOp expression                     # logical_expression
+//        |<assoc=right> expression RelationalOp expression                  # relational_expression
+//        |<assoc=right> expression AdditiveOp expression                    # additive_expression
+//        |<assoc=right> expression MultiplicativeOp expression              # multiplicative_expression
+//        |<assoc=right> expression PowerOp expression                       # power_expression
+//        |<assoc=right> BuiltinFunction '(' expression ')'                  # builtin_function_expression
+//        |<assoc=right> NegationOp expression                               # negation_expression
+//        |<assoc=right> expression UnaryPostfixOp              # unary_postfix_expression
+//        |<assoc=right> (AdditiveOp|UnaryOp) expression                     # unary_expression
+//        | object                                              # object_expression
+//	;
+
 expression
-        : object                                              # object_expression
-        | (AdditiveOp|UnaryOp) expression                     # unary_expression
-        |<assoc=right> expression UnaryPostfixOp              # unary_postfix_expression
-        | 'if' expression 'then' expression 'else' expression # terniary_expression
-        | expression MultiplicativeOp expression              # multiplicative_expression
-        | expression AdditiveOp expression                    # additive_expression
-        | NegationOp expression                               # negation_expression
-        | expression RelationalOp expression                  # relational_expression
-        | expression LogicalOp expression                     # logical_expression
+        : object                                                 # object_expression
+        | (AdditiveOp|UnaryOp) expression                        # unary_expression
+        |<assoc=right> expression UnaryPostfixOp                 # unary_postfix_expression
+        | NegationOp expression                                  # negation_expression
+        | BuiltinFunction '(' expression ')'                     # builtin_function_expression
+        | expression PowerOp expression                          # power_expression
+        | expression MultiplicativeOp expression                 # multiplicative_expression
+        | expression AdditiveOp expression                       # additive_expression
+        | expression ComparitiveOp expression                    # comparitive_expression
+        | expression EqualityOp expression                       # equality_expression
+        | expression AndOp expression                            # and_expression
+        | expression OrOp expression                             # or_expression
+        | 'if' expression 'then' expression ('else' expression)? # terniary_expression
 	;
 
 predicate
@@ -109,11 +121,10 @@ obj_fragment
         ;
 
 myterminal
-        : identifier
-	//| '[' expression_list ']'
-	//| table_expression
-	//| list_expression
-	| literal
+	: literal
+        | identifier
+        | '[' (expression (',' expression)*)? ']'
+        | 'table' '[' (expression (',' expression)*)? ']'
 	;
 
 literal
@@ -126,6 +137,7 @@ literal
 	| TimeValue
 	| CreditValue
         | TextDbRef
+        | 'null'
 	;
 
 identifier

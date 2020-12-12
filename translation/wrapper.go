@@ -20,8 +20,8 @@ func UnTranslate(outfp *os.File, fname string) {
 	untranslate.Translate(outfp, fname)
 }
 
-func TestLexer(str string) {
-	untranslate.TestLexer(str)
+func TestLexer(str string, isfile bool) {
+	untranslate.TestLexer(str, isfile)
 }
 
 func TestScriptLexer(str string, isfile bool) {

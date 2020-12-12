@@ -85,6 +85,7 @@ const (
 	ConditionIf = 1 + iota
 	ConditionElseif
 	ConditionElse
+	ConditionWhile
 )
 
 type ConditionStatement struct {
@@ -99,7 +100,7 @@ func (n *AstNode) AddConditionStatement(expr *Expression, ctype int) *ConditionS
 	cond.Type = ctype
 
 	switch ctype {
-	case ConditionIf, ConditionElseif:
+	case ConditionIf, ConditionElseif, ConditionWhile:
 		cond.Expr = expr
 	case ConditionElse:
 		cond.Expr = nil

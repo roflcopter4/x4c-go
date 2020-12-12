@@ -85,6 +85,14 @@ func (b *builder) StartElement(node XMLtypes.Node) {
 			b.Conditional(node, ast.ConditionElseif)
 		case "do_else":
 			b.Conditional(node, ast.ConditionElse)
+		case "do_while":
+			b.Conditional(node, ast.ConditionWhile)
+
+		case "do_for_each":
+			b.GenericXML(node)
+		case "do_all":
+			b.GenericXML(node)
+
 		default:
 			panic("Impossible!")
 		}
@@ -116,7 +124,7 @@ func (b *builder) GenericXML(node XMLtypes.Node) {
 func (b *builder) Conditional(node XMLtypes.Node, ctype int) {
 	var expr *ast.Expression = nil
 
-	if ctype == ast.ConditionIf || ctype == ast.ConditionElseif {
+	if ctype == ast.ConditionIf || ctype == ast.ConditionElseif || ctype == ast.ConditionWhile {
 		expr = new(ast.Expression)
 		nattr := b.rd.AttributeCount()
 		b.rd.MoveToAttributeNo(0)
