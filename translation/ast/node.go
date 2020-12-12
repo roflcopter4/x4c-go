@@ -1,19 +1,5 @@
 package ast
 
-type AstNode struct {
-	root     AST
-	parent   Node
-	children []Node
-	flags    uint64
-}
-
-type RootNode struct {
-	XMLStatement
-	current Node
-}
-
-/***************************************************************************************/
-
 func NewAst() AST {
 	ret := new(RootNode)
 	ret.root = ret
@@ -27,28 +13,23 @@ func NewAst() AST {
 
 /***************************************************************************************/
 
-// Accessor method: return the root node
-func (n *AstNode) Root() AST        { return n.root }
-func (n *AstNode) SetRoot(root AST) { n.root = root }
-
-// Accessor method: return the parent node
-func (n *AstNode) Parent() Node          { return n.parent }
-func (n *AstNode) SetParent(parent Node) { n.parent = parent }
-
-// Accessor method: return the mask of flags
-func (n *AstNode) Flags() uint64        { return n.flags }
-func (n *AstNode) SetFlags(mask uint64) { n.flags = mask }
-func (n *AstNode) AddFlags(mask uint64) { n.flags |= mask }
-
-func (n *AstNode) NumChildren() int {
-	if n.children == nil {
-		return 0
-	} else {
-		return len(n.children)
-	}
+type AstNode struct {
+	root     AST
+	parent   Node
+	children []Node
+	flags    uint64
 }
-func (n *AstNode) Children() []Node { return n.children }
-func (n *AstNode) initChildren()    { n.children = make([]Node, 0) }
+
+func (n *AstNode) AddFlags(mask uint64)  { n.flags |= mask }
+func (n *AstNode) SetFlags(mask uint64)  { n.flags = mask }
+func (n *AstNode) SetParent(parent Node) { n.parent = parent }
+func (n *AstNode) SetRoot(root AST)      { n.root = root }
+func (n *AstNode) initChildren()         { n.children = make([]Node, 0) }
+func (n *AstNode) GetChildren() []Node   { return n.children }
+func (n *AstNode) GetFlags() uint64      { return n.flags }
+func (n *AstNode) GetParent() Node       { return n.parent }
+func (n *AstNode) GetRoot() AST          { return n.root }
+func (n *AstNode) NumChildren() int      { return len(n.children) }
 
 // Returns true if the node contains all provided flags
 func (n *AstNode) HasFlags(flags ...NodeFlag) bool {
@@ -60,10 +41,8 @@ func (n *AstNode) HasFlags(flags ...NodeFlag) bool {
 	return true
 }
 
-/***************************************************************************************/
-
 func (parent *AstNode) init(child Node) {
-	child.SetRoot(parent.Root())
+	child.SetRoot(parent.GetRoot())
 	child.SetParent(parent)
 	child.SetFlags(NFlagNone)
 	child.initChildren()
@@ -76,14 +55,21 @@ func (n *AstNode) AddChild(child Node) {
 	n.children = append(n.children, child)
 }
 
-func (r *RootNode) C() Node           { return r.current }
+/***************************************************************************************/
+
+type RootNode struct {
+	XMLStatement
+	current Node
+}
+
+func (r *RootNode) GetC() Node        { return r.current }
 func (r *RootNode) SetC(current Node) { r.current = current }
 func (r *RootNode) StartNode() Node {
 	switch r.NumChildren() {
 	case 0:
 		return nil
 	case 1:
-		return r.Children()[0]
+		return r.GetChildren()[0]
 	default:
 		panic("Invalid root node!")
 	}

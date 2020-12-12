@@ -26,11 +26,11 @@ func create_xml(tree ast.AST) *XMLdom.Document {
 	data.cur = nil
 
 	{
-		node := tree.Root().Children()[0].(*ast.XMLStatement)
+		node := tree.GetRoot().GetChildren()[0].(*ast.XMLStatement)
 		element := data.handle_xml_statement(node)
 		data.doc.SetDocumentElement(element)
 		data.cur = element
-		for _, ch := range node.Children() {
+		for _, ch := range node.GetChildren() {
 			data.walk_tree(ch)
 		}
 	}
@@ -44,7 +44,7 @@ func (data *cur_data) walk_tree(node ast.Node) {
 	if node.HasFlags(ast.NFlagBlock) {
 		tmp := data.cur
 		data.cur = cur
-		for _, ch := range node.Children() {
+		for _, ch := range node.GetChildren() {
 			data.walk_tree(ch)
 		}
 		data.cur = tmp

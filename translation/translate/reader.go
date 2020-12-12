@@ -41,8 +41,8 @@ func Translate(outfp *os.File, doc myxml.DocWrapper) {
 		rd:  reader,
 		a:   ast.NewAst(),
 	}
-	b.cur = b.a.Root()
-	b.block = b.a.Root()
+	b.cur = b.a.GetRoot()
+	b.block = b.a.GetRoot()
 
 	for reader.TextRead() != 0 {
 		node, _ := reader.CurrentNode()
@@ -102,7 +102,7 @@ func (b *builder) StartElement(node XMLtypes.Node) {
 }
 
 func (b *builder) EndElement(node XMLtypes.Node) {
-	b.block = b.block.Parent()
+	b.block = b.block.GetParent()
 }
 
 //========================================================================================

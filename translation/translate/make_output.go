@@ -47,7 +47,7 @@ func (data *cur_data) walk_tree(node ast.Node) {
 		data.lines = append(data.lines, str+" {")
 		data.depth++
 
-		for _, child := range node.Children() {
+		for _, child := range node.GetChildren() {
 			data.walk_tree(child)
 		}
 

@@ -85,8 +85,8 @@ func parse_file(fname string) ast.AST {
 		}
 	)
 
-	l.cur = l.a.Root()
-	l.block = l.a.Root()
+	l.cur = l.a.GetRoot()
+	l.block = l.a.GetRoot()
 
 	antlr.ParseTreeWalkerDefault.Walk(l, par.Document())
 
@@ -100,7 +100,7 @@ func (l *listener) EnterCompoundStmt(c *parser.CompoundStmtContext) {
 }
 
 func (l *listener) ExitCompoundStmt(c *parser.CompoundStmtContext) {
-	l.block = l.block.Parent()
+	l.block = l.block.GetParent()
 }
 
 func (l *listener) ExitXmlStmt(c *parser.XmlStmtContext) {

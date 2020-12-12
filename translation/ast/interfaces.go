@@ -1,13 +1,22 @@
 package ast
 
+type NodeFlag = uint64
+
+const (
+	NFlagNone NodeFlag = 0
+	NFlagRoot NodeFlag = 1 << iota
+	NFlagBlock
+	NFlagText
+)
+
 type Node interface {
 	init(Node)
 	initChildren()
 
-	Root() AST
-	Parent() Node
-	Flags() uint64
-	Children() []Node
+	GetRoot() AST
+	GetParent() Node
+	GetFlags() uint64
+	GetChildren() []Node
 
 	SetRoot(AST)
 	SetParent(Node)
@@ -24,7 +33,7 @@ type Node interface {
 
 type AST interface {
 	Node
-	C() Node         // Current node
+	GetC() Node      // Current node
 	SetC(Node)       // Set current node
 	StartNode() Node // Get the first real node
 }
