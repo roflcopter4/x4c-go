@@ -72,7 +72,22 @@ func (data *cur_data) handle_node(node ast.Node) XMLtypes.Node {
 		ret = com
 
 	case *ast.ConditionStatement:
-		panic("IM LAZY")
+		var el XMLtypes.Element
+
+		if n.Expr != nil && n.Expr.XML != nil {
+			el = data.handle_xml_statement(n.Expr.XML)
+		} else {
+			var err error
+			if el, err = data.doc.CreateElement("do_" + n.GetIdent()); err != nil {
+				panic(err)
+			}
+			if n.Expr != nil {
+				el.SetAttribute("value", n.Expr.Raw)
+			}
+		}
+
+		data.cur.AddChild(el)
+		ret = el
 
 	case *ast.AstNode:
 		util.Die(1, "Invalid type somehow %+v\n", n)

@@ -13,6 +13,7 @@ fragment IdentChar: [a-zA-Z0-9_];
 fragment SP: [ ];
 fragment INT: [0-9];
 fragment HEX: [0-9a-fA-F];
+fragment FLOAT: (((INT+ '.' INT* | '.' INT+)('e' INT+)?) | (INT+ 'e' INT+));
 
 /* These are the types formally defined in the schemas. */
 
@@ -38,14 +39,14 @@ AndOp            : 'and' | '&&' ; // I may or may not allow 'C' style logical op
 OrOp             : 'or' | '||' ;
 
 /* Numbers and lots of etc */
-TimeValue:     INT+ ('ms' | 's' | 'min' | 'h');
-DistanceValue: INT+ ('m'|'km');
-CreditValue:   INT+ ('ct'|'Cr');
-DegreeValue:   INT+ ('deg'|'rad');
-HealthValue:   INT+ 'hp';
+TimeValue:     (INT+ | FLOAT) [ ]* ('ms' | 's' | 'min' | 'h');
+DistanceValue: (INT+ | FLOAT) [ ]* ('m'|'km');
+CreditValue:   (INT+ | FLOAT) [ ]* ('ct'|'Cr');
+DegreeValue:   (INT+ | FLOAT) [ ]* ('deg'|'rad');
+HealthValue:   (INT+ | FLOAT) [ ]* 'hp';
 
-Float  : (INT+ '.' INT* | '.' INT+) ('f'|'LF')?
-       | INT+ ('f'|'LF');
+Float  : FLOAT [ ]* ('f'|'LF')?
+       | INT+ [ ]* ('f'|'LF');
 
 Integer: INT+ [iL]?;
 SString: ['] ('\\'['] | ~['])* ['];
@@ -122,10 +123,10 @@ keywordClash
 /* Condition statement: if/elseif/else/while. Sanity checking the if/else chain
  * is handled in the code because I couldn't think of a way to do it here. */
 conditionStmt
-	: Ident='if'     Lst=conditionExpr
-	| Ident='elseif' Lst=conditionExpr
-        | Ident='while'  Lst=conditionExpr
-	| Ident='else'
+	: Ident='if'     Lst=conditionExpr # ifStmt
+	| Ident='elseif' Lst=conditionExpr # elseifStmt
+        | Ident='while'  Lst=conditionExpr # whileStmt
+	| Ident='else'                     # elseStmt
 	;
 
 /* As a special case conditions will allow xml style statements for now. */

@@ -16,7 +16,7 @@ import (
 	"github.com/roflcopter4/x4c-go/util"
 )
 
-const DEFAULT_INDENT = 2
+const DEFAULT_INDENT = 4
 
 var Indent_Size = DEFAULT_INDENT
 

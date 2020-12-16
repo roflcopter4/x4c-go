@@ -49,8 +49,6 @@ func main() {
 		translation.TestScriptLexer(args[0], true)
 	case "S":
 		translation.TestScriptLexer(args[0], false)
-	default:
-		util.Die(1, "Must specify an operation. Dipshit.")
 	}
 }
 

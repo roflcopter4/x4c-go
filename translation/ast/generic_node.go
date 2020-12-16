@@ -1,5 +1,7 @@
 package ast
 
+/***************************************************************************************/
+
 type XMLStatement struct {
 	AstNode
 	Name       string
@@ -9,11 +11,6 @@ type XMLStatement struct {
 type XMLAttribute struct {
 	Name string
 	Val  *Expression
-}
-
-type Expression struct {
-	Raw string
-	XML []*XMLAttribute
 }
 
 func (n *AstNode) AddXMLStatement(name string) *XMLStatement {
@@ -29,10 +26,11 @@ func (stmt *XMLStatement) AddAttribute(name string, expr *Expression) {
 	stmt.Attributes = append(stmt.Attributes, &XMLAttribute{name, expr})
 }
 
-func NewExpression(raw string) *Expression {
-	expr := new(Expression)
-	expr.Raw = raw
-	return expr
+func NewXMLStatement(name string) *XMLStatement {
+	stmt := new(XMLStatement)
+	stmt.Name = name
+	stmt.Attributes = make([]*XMLAttribute, 0)
+	return stmt
 }
 
 /***************************************************************************************/

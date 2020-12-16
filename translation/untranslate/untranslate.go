@@ -93,6 +93,26 @@ func parse_file(fname string) ast.AST {
 	return l.a
 }
 
+func get_lexer(fname string) (antlr.CharStream, *parser.X4CLexer) {
+	var charstream antlr.CharStream
+
+	if fname == "-" {
+		b, err := ioutil.ReadAll(os.Stdin)
+		if err != nil {
+			panic(err)
+		}
+		charstream = antlr.NewInputStream(string(b))
+	} else {
+		fs, err := antlr.NewFileStream(fname)
+		if err != nil {
+			panic(err)
+		}
+		charstream = fs
+	}
+
+	return charstream, parser.NewX4CLexer(charstream)
+}
+
 /****************************************************************************************/
 
 func (l *listener) EnterCompoundStmt(c *parser.CompoundStmtContext) {
@@ -109,22 +129,6 @@ func (l *listener) ExitXmlStmt(c *parser.XmlStmtContext) {
 
 	if lst := c.GetLst(); lst != nil {
 		add_attrs(stmt, lst.GetChildren())
-	}
-}
-
-func (l *listener) ExitConditionStmt(c *parser.ConditionStmtContext) {
-	stmt := l.block.AddXMLStatement("do_" + c.GetIdent().GetText())
-	l.cur = stmt
-
-	if lst := c.GetLst(); lst != nil {
-		ctx := lst.(*parser.ConditionExprContext)
-		if ctx.AttributeList() != nil {
-			add_attrs(stmt, ctx.AttributeList().GetChildren())
-		} else {
-			expr := ctx.Expression()
-			val := l.cs.GetText(expr.GetStart().GetStart(), expr.GetStop().GetStop())
-			stmt.AddAttribute("value", ast.NewExpression(val))
-		}
 	}
 }
 
@@ -150,6 +154,69 @@ func (l *listener) ExitCommentStmt(c *parser.CommentStmtContext) {
 
 /****************************************************************************************/
 
+func (l *listener) handle_conditional_statement(lst_i parser.IConditionExprContext, ctype int, ident string) {
+	var (
+		expr = new(ast.Expression)
+		lst  = lst_i.(*parser.ConditionExprContext)
+	)
+
+	if lst.AttributeList() != nil {
+		// Just treat the condition as a generic XML statement for now.
+		expr.XML = ast.NewXMLStatement(ident)
+		add_attrs(expr.XML, lst.AttributeList().GetChildren())
+	} else {
+		cond := lst.Expression()
+		val := l.cs.GetText(cond.GetStart().GetStart(), cond.GetStop().GetStop())
+		expr.Raw = val
+	}
+
+	stmt := l.block.AddConditionStatement(expr, ctype)
+	l.cur = stmt
+}
+
+func (l *listener) ExitIfStmt(c *parser.IfStmtContext) {
+	l.handle_conditional_statement(c.GetLst(), ast.ConditionIf, "do_if")
+}
+
+func (l *listener) ExitElseifStmt(c *parser.ElseifStmtContext) {
+	l.handle_conditional_statement(c.GetLst(), ast.ConditionElseif, "do_elseif")
+}
+
+func (l *listener) ExitWhileStmt(c *parser.WhileStmtContext) {
+	l.handle_conditional_statement(c.GetLst(), ast.ConditionWhile, "do_while")
+}
+
+func (l *listener) ExitElseStmt(c *parser.ElseStmtContext) {
+	stmt := l.block.AddConditionStatement(nil, ast.ConditionElse)
+	l.cur = stmt
+}
+
+//func (l *listener) ExitConditionStmt(c *parser.ConditionStmtContext) {
+//	// stmt := l.block.AddXMLStatement("do_" + c.GetIdent().GetText())
+//	// stmt = l.block.AddConditionStatement
+//	// l.cur = stmt
+//
+//	if lst := c.GetLst(); lst != nil {
+//		ctx := lst.(*parser.ConditionExprContext)
+//		if ctx.AttributeList() != nil {
+//			// Just treat the condition as a generic XML statement for now.
+//			stmt := l.block.AddXMLStatement("do_" + c.GetIdent().GetText())
+//			l.cur = stmt
+//			add_attrs(stmt, ctx.AttributeList().GetChildren())
+//		} else {
+//			// Actually handle the condition properly.
+//			expr := ctx.Expression()
+//			val := l.cs.GetText(expr.GetStart().GetStart(), expr.GetStop().GetStop())
+//			stmt.AddAttribute("value", ast.NewExpression(val))
+//		}
+//	} else {
+//		// Can only be an `else` statement
+//		stmt := l.block.AddConditionStatement(nil, ast.ConditionElse)
+//	}
+//}
+
+/****************************************************************************************/
+
 func add_attrs(stmt *ast.XMLStatement, lst []antlr.Tree) {
 	for _, child := range lst {
 		switch a := child.(type) {
@@ -162,24 +229,4 @@ func add_attrs(stmt *ast.XMLStatement, lst []antlr.Tree) {
 			add_attrs(stmt, a.GetChildren())
 		}
 	}
-}
-
-func get_lexer(fname string) (antlr.CharStream, *parser.X4CLexer) {
-	var charstream antlr.CharStream
-
-	if fname == "-" {
-		b, err := ioutil.ReadAll(os.Stdin)
-		if err != nil {
-			panic(err)
-		}
-		charstream = antlr.NewInputStream(string(b))
-	} else {
-		fs, err := antlr.NewFileStream(fname)
-		if err != nil {
-			panic(err)
-		}
-		charstream = fs
-	}
-
-	return charstream, parser.NewX4CLexer(charstream)
 }

@@ -13,13 +13,9 @@ fragment IdentChar: [a-zA-Z0-9_];
 fragment SP: [ ];
 fragment INT: [0-9];
 fragment HEX: [0-9a-fA-F];
+fragment FLOAT: (((INT+ '.' INT* | '.' INT+)('e' INT+)?) | (INT+ 'e' INT+));
 
 TextDbRef: '{' [1-9][0-9]* ',' SP* [1-9][0-9]* '}';
-
-//Operator: '==' | '!=' | '[]'
-//	| '+' | '-' | '*' | '/' | '%' | '^' | '='
-//	| ';' | ':' | '!' | '@' | '?' | '.' | ','
-//	| '(' | ')' | '{' | '}' | '[' | ']';
 
 Operator: '='
 	| ';' | ':' | '.' | ','
@@ -29,24 +25,22 @@ AdditiveOp       : '+' | '-' ;
 MultiplicativeOp : '*' | '/' | '%' ;
 PowerOp          : '^';
 UnaryPostfixOp   : '?';
-UnaryOp          : '@' | 'typeof' ; // Supposedly negation has the same precidence as other unary operators? Madness. MADNESS!
+UnaryOp          : '@' | 'typeof' ;
 NegationOp       : 'not' | '!' ;
 ComparitiveOp    : 'le' | 'ge' | 'lt' | 'gt' | '<=' | '>=' | '<' | '>' ;
 EqualityOp       : '==' | '!=' ;
-AndOp            : 'and' | '&&' ;
+AndOp            : 'and' | '&&' ; // I may or may not allow 'C' style logical operators.
 OrOp             : 'or' | '||' ;
 
-//BuiltinFunction  : 'sqrt' ;
-
 /* Numbers and lots of etc */
-TimeValue:     INT+ ('ms' | 's' | 'min' | 'h');
-DistanceValue: INT+ ('m'|'km');
-CreditValue:   INT+ ('ct'|'Cr');
-DegreeValue:   INT+ ('deg'|'rad');
-HealthValue:   INT+ 'hp';
+TimeValue:     (INT+ | FLOAT) [ ]* ('ms' | 's' | 'min' | 'h');
+DistanceValue: (INT+ | FLOAT) [ ]* ('m'|'km');
+CreditValue:   (INT+ | FLOAT) [ ]* ('ct'|'Cr');
+DegreeValue:   (INT+ | FLOAT) [ ]* ('deg'|'rad');
+HealthValue:   (INT+ | FLOAT) [ ]* 'hp';
 
-Float  : (INT+ '.' INT* | '.' INT+) ('f'|'LF')?
-       | INT+ ('f'|'LF');
+Float  : FLOAT [ ]* ('f'|'LF')?
+       | INT+ [ ]* ('f'|'LF');
 
 Integer: INT+ [iL]?;
 SString: ['] ('\\'['] | ~['])* ['];

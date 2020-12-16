@@ -124,9 +124,9 @@ func (b *builder) GenericXML(node XMLtypes.Node) {
 func (b *builder) Conditional(node XMLtypes.Node, ctype int) {
 	var expr *ast.Expression = nil
 
-	if ctype == ast.ConditionIf || ctype == ast.ConditionElseif || ctype == ast.ConditionWhile {
+	// if ctype == ast.ConditionIf || ctype == ast.ConditionElseif || ctype == ast.ConditionWhile {
+	if nattr := b.rd.AttributeCount(); nattr > 0 {
 		expr = new(ast.Expression)
-		nattr := b.rd.AttributeCount()
 		b.rd.MoveToAttributeNo(0)
 
 		if nattr == 1 && b.rd.Name() == "value" {
@@ -134,11 +134,13 @@ func (b *builder) Conditional(node XMLtypes.Node, ctype int) {
 		} else {
 			attr, _ := node.(XMLtypes.Element).Attributes()
 			expr.Raw = get_attr_string(attr)
-			expr.XML = make([]*ast.XMLAttribute, nattr)
+			expr.XML = new(ast.XMLStatement)
+			expr.XML.Attributes = make([]*ast.XMLAttribute, nattr)
+
 			for i := 0; i < nattr; i++ {
 				b.rd.MoveToAttributeNo(i)
 				if node, _ := b.rd.CurrentNode(); node != nil {
-					expr.XML[i] = &ast.XMLAttribute{
+					expr.XML.Attributes[i] = &ast.XMLAttribute{
 						Name: b.rd.Name(),
 						Val:  ast.NewExpression(b.rd.Value()),
 					}
