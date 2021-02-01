@@ -18,7 +18,6 @@ dirs   := config myxml util util/color \
 	  translation/gen/scriptparser \
 	  translation \
 	  translation/ast \
-	  translation/newast \
 	  translation/translate \
 	  translation/untranslate
 
