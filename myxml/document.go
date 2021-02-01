@@ -67,13 +67,15 @@ func New_Document(fname string) (DocWrapper, error) {
 		return nil, err
 	}
 
-	// fmt.Print(1, "%s", docstring)
+	// util.Eprintf("%s\n\n", docstring)
 	// os.Exit(1)
 
 	// if doc, err = XML.ParseReader(xml_file); err != nil {
 	//       return nil, errors.WithMessage(err, "XML parse failed")
 	// }
 	if doc, err = XML.ParseString(docstring); err != nil {
+		// docstring += "hi"
+		// if doc, err = XML.ParseString(strings.Join(lines, "")); err != nil {
 		return nil, errors.WithMessage(err, "XML parse failed")
 	}
 
@@ -134,42 +136,28 @@ func (d *document) Free() {
 // type document
 
 // Return the XML document
-func (d *document) Doc() XMLtypes.Document {
-	return d.doc
-}
+func (d *document) Doc() XMLtypes.Document { return d.doc }
 
 // Return the filename struct
-func (d *document) Name() *fileName {
-	return &d.filename
-}
+func (d *document) Name() *fileName { return &d.filename }
 
 // Return the md or aiscript name
-func (d *document) ScriptName() string {
-	return d.scriptname
-}
+func (d *document) ScriptName() string { return d.scriptname }
 
 // Return the compiled xsd schema
-func (d *document) Schema() *XMLxsd.Schema {
-	return d.schema.xml_schema
-}
+func (d *document) Schema() *XMLxsd.Schema { return d.schema.xml_schema }
 
 // -------------
 // type fileName
 
 // Return the base filename (as with basename(1))
-func (fname *fileName) Base() string {
-	return fname.base
-}
+func (fname *fileName) Base() string { return fname.base }
 
 // Return the file path (as with dirname(1))
-func (fname *fileName) Path() string {
-	return fname.path
-}
+func (fname *fileName) Path() string { return fname.path }
 
 // Return the full file path
-func (fname *fileName) Full() string {
-	return fname.full
-}
+func (fname *fileName) Full() string { return fname.full }
 
 //========================================================================================
 // Util
@@ -208,12 +196,12 @@ func badly_escape_line_breaks(fname string) ([]string, string, error) {
 	}
 
 	var (
-		orig         = strings.ReplaceAll(string(b), "\r\n", "\n")
-		repl         = ""
-		esc          = false
+		orig = strings.ReplaceAll(string(b), "\r\n", "\n")
+		repl = ""
+		// esc          = false
 		is_attribute = false
 		is_comment   = false
-		is_string    = false
+		// is_string    = false
 	)
 
 	for i, l := 0, utf8.RuneCountInString(orig); i < l; i++ {
@@ -242,31 +230,31 @@ func badly_escape_line_breaks(fname string) ([]string, string, error) {
 				continue
 			}
 
-		case '\\':
-			esc = true
-			repl += string(ch)
-			continue
+		// case '\\':
+		//       esc = true
+		//       repl += string(ch)
+		//       continue
 
-		case '\'':
-			if is_attribute && !esc {
-				is_string = !is_string
-			}
+		//case '\'':
+		//	if is_attribute && !esc {
+		//		is_string = !is_string
+		//	}
 
 		case '"':
-			if !is_string {
-				is_attribute = !is_attribute
-			}
+			// if !is_string {
+			is_attribute = !is_attribute
+			// }
 
 		case '\n':
 			if is_attribute {
 				repl += "&#xA;"
-				esc = false
+				// esc = false
 				continue
 			}
 		}
 
 		repl += string(ch)
-		esc = false
+		// esc = false
 	}
 
 	return strings.Split(orig, "\n"), repl, nil

@@ -20,9 +20,9 @@ type Node interface {
 
 	SetRoot(AST)
 	SetParent(Node)
-	SetFlags(uint64)
-	AddFlags(uint64)
-	HasFlags(...NodeFlag) bool
+	SetFlags(NodeFlag)
+	AddFlags(NodeFlag)
+	HasFlags(NodeFlag) bool
 	AddChild(Node)
 
 	AddXMLStatement(string) *XMLStatement

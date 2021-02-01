@@ -10,7 +10,7 @@ import (
 	"github.com/davecgh/go-spew/spew"
 
 	"github.com/roflcopter4/x4c-go/translation/ast"
-	"github.com/roflcopter4/x4c-go/translation/untranslate/gen/parser"
+	"github.com/roflcopter4/x4c-go/translation/gen/parser"
 )
 
 func init() {
@@ -123,7 +123,7 @@ func (l *listener) ExitCompoundStmt(c *parser.CompoundStmtContext) {
 	l.block = l.block.GetParent()
 }
 
-func (l *listener) ExitXmlStmt(c *parser.XmlStmtContext) {
+func (l *listener) EnterXmlStmt(c *parser.XmlStmtContext) {
 	stmt := l.block.AddXMLStatement(c.GetIdent().GetText())
 	l.cur = stmt
 
@@ -132,7 +132,7 @@ func (l *listener) ExitXmlStmt(c *parser.XmlStmtContext) {
 	}
 }
 
-func (l *listener) ExitCommentStmt(c *parser.CommentStmtContext) {
+func (l *listener) EnterCommentStmt(c *parser.CommentStmtContext) {
 	tok := c.GetChild(0).(antlr.TerminalNode).GetSymbol()
 	txt := tok.GetText()
 
@@ -174,19 +174,19 @@ func (l *listener) handle_conditional_statement(lst_i parser.IConditionExprConte
 	l.cur = stmt
 }
 
-func (l *listener) ExitIfStmt(c *parser.IfStmtContext) {
+func (l *listener) EnterIfStmt(c *parser.IfStmtContext) {
 	l.handle_conditional_statement(c.GetLst(), ast.ConditionIf, "do_if")
 }
 
-func (l *listener) ExitElseifStmt(c *parser.ElseifStmtContext) {
+func (l *listener) EnterElseifStmt(c *parser.ElseifStmtContext) {
 	l.handle_conditional_statement(c.GetLst(), ast.ConditionElseif, "do_elseif")
 }
 
-func (l *listener) ExitWhileStmt(c *parser.WhileStmtContext) {
+func (l *listener) EnterWhileStmt(c *parser.WhileStmtContext) {
 	l.handle_conditional_statement(c.GetLst(), ast.ConditionWhile, "do_while")
 }
 
-func (l *listener) ExitElseStmt(c *parser.ElseStmtContext) {
+func (l *listener) EnterElseStmt(c *parser.ElseStmtContext) {
 	stmt := l.block.AddConditionStatement(nil, ast.ConditionElse)
 	l.cur = stmt
 }

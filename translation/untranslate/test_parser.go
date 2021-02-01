@@ -8,7 +8,7 @@ import (
 
 	"github.com/antlr/antlr4/runtime/Go/antlr"
 	"github.com/davecgh/go-spew/spew"
-	script "github.com/roflcopter4/x4c-go/translation/untranslate/gen/scriptparser"
+	script "github.com/roflcopter4/x4c-go/translation/gen/scriptparser"
 )
 
 type ScriptVisitor struct {

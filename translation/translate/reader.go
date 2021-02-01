@@ -16,6 +16,7 @@ import (
 
 	"github.com/roflcopter4/x4c-go/myxml"
 	"github.com/roflcopter4/x4c-go/translation/ast"
+	"github.com/roflcopter4/x4c-go/translation/newast"
 	"github.com/roflcopter4/x4c-go/util"
 )
 
@@ -142,7 +143,8 @@ func (b *builder) Conditional(node XMLtypes.Node, ctype int) {
 				if node, _ := b.rd.CurrentNode(); node != nil {
 					expr.XML.Attributes[i] = &ast.XMLAttribute{
 						Name: b.rd.Name(),
-						Val:  ast.NewExpression(b.rd.Value()),
+						//Val:  ast.NewExpression(b.rd.Value()),
+						Val: lazy_lazy_lazy(b.rd.Name(), b.rd.Value()),
 					}
 				}
 			}
@@ -160,7 +162,8 @@ func (b *builder) add_attributes(stmt *ast.XMLStatement) {
 	for i, nattr := 0, b.rd.AttributeCount(); i < nattr; i++ {
 		b.rd.MoveToAttributeNo(i)
 		if node, _ := b.rd.CurrentNode(); node != nil {
-			expr := ast.NewExpression(b.rd.Value())
+			// expr := ast.NewExpression(b.rd.Value())
+			expr := lazy_lazy_lazy(b.rd.Name(), b.rd.Value())
 			stmt.AddAttribute(b.rd.Name(), expr)
 		}
 	}
@@ -174,4 +177,12 @@ func get_attr_string(lst []XMLtypes.Attribute) (ret string) {
 		ret += fmt.Sprintf("%s=\"%s\"", a.NodeName(), a.NodeValue())
 	}
 	return
+}
+
+func lazy_lazy_lazy(name, val string) *ast.Expression {
+	if !util.StrEqAny(name, "comment", "xmlns:xsi", "xsi:noNamespaceSchemaLocation") {
+		fmt.Printf("Looking at expression `%s=\"%s\"`\n", name, val)
+		newast.Parse_Expression(val)
+	}
+	return ast.NewExpression(val)
 }

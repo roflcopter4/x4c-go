@@ -9,16 +9,18 @@
 
 .SUFFIXES: .g4 .go
 
-maingrammar   := translation/untranslate/gen/X4C.g4
-scriptgrammar := translation/untranslate/gen/Script.g4
+maingrammar   := translation/gen/X4C.g4
+scriptgrammar := translation/gen/Script.g4
 
 target := x4c
-dirs   := config myxml util util/colour translation \
+dirs   := config myxml util util/color \
+	  translation/gen/parser \
+	  translation/gen/scriptparser \
+	  translation \
 	  translation/ast \
+	  translation/newast \
 	  translation/translate \
-	  translation/untranslate \
-	  translation/untranslate/gen/parser \
-	  translation/untranslate/gen/scriptparser
+	  translation/untranslate
 
 all: antlr .WAIT install_dirs
 	go build
@@ -33,7 +35,7 @@ skip: install_dirs
 	go build
 
 antlr:
-	antlr4 -Dlanguage=Go -package parser -long-messages -o "${.CURDIR}/${maingrammar:H}/parser" "${.CURDIR}/${maingrammar}"
+	antlr4 -Dlanguage=Go -package parser       -visitor -long-messages -o "${.CURDIR}/${maingrammar:H}/parser" "${.CURDIR}/${maingrammar}"
 	antlr4 -Dlanguage=Go -package scriptparser -visitor -long-messages -o "${.CURDIR}/${scriptgrammar:H}/scriptparser" "${.CURDIR}/${scriptgrammar}"
 
 install_dirs:

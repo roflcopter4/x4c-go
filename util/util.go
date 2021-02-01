@@ -1,6 +1,6 @@
 package util
 
-// [>
+// /*
 // #include <stdint.h>
 // static double
 // ldouble_wrap(const uint64_t nsec1, const uint64_t nsec2)
@@ -24,50 +24,32 @@ import (
 
 var Logfiles map[string]*os.File
 
-func FuncName() []byte {
+func FuncName() string {
 	pc, _, _, _ := runtime.Caller(1)
 	fn := runtime.FuncForPC(pc)
 	elems := strings.Split(fn.Name(), ".")
-	return []byte(elems[len(elems)-1])
+	return elems[len(elems)-1]
 }
 
-func Eprintf(format string, a ...interface{}) {
-	fmt.Fprintf(os.Stderr, format, a...)
-}
+func Eprint(a ...interface{})                 { fmt.Fprint(os.Stderr, a...) }
+func Eprintln(a ...interface{})               { fmt.Fprintln(os.Stderr, a...) }
+func Eprintf(format string, a ...interface{}) { fmt.Fprintf(os.Stderr, format, a...) }
 
-// func Warn(format string, a ...interface{}) {
-//       fmt.Fprintf(os.Stderr, "WARNING: "+format, a...)
-// }
-
-func Max_Int(a, b int) int {
+func MaxInt(a, b int) int {
 	if a > b {
 		return a
 	}
 	return b
 }
 
-func Min_Int(a, b int) int {
+func MinInt(a, b int) int {
 	if a < b {
 		return a
 	}
 	return b
 }
 
-func Safe_Fopen(fname string, mode, perm int) *os.File {
-	file, e := os.OpenFile(fname, mode, os.FileMode(perm))
-	if e != nil {
-		panic(e)
-	}
-	return file
-}
-
-func Assert(cond bool, mes string, a ...interface{}) {
-	if !cond {
-		panic(fmt.Sprintf(mes, a...))
-	}
-}
-
-func Boolint(b bool) int {
+func BoolInt(b bool) int {
 	if b {
 		return 1
 	} else {
@@ -75,18 +57,28 @@ func Boolint(b bool) int {
 	}
 }
 
-func Quick_Read(filename string) []byte {
-	// st, e := os.Stat(filename)
-	// if e != nil {
-	//         return nil
-	// }
-	//
-	// var (
-	//         ret  = make([]byte, 0, st.Size())
-	//         file *os.File
-	//         n    int
-	// )
+// func Assert(cond bool, mes string, a ...interface{}) {
+func Assert(cond bool, a ...interface{}) {
+	if !cond {
+		var msg string
+		if _, fileName, fileLine, ok := runtime.Caller(1); ok {
+			msg = fmt.Sprintf("Assertion failed at (%s: %d): ", fileName, fileLine)
+		} else {
+			msg = "Assertion failed: "
+		}
+		panic(msg + fmt.Sprint(a...))
+	}
+}
 
+func SafeFopen(fname string, mode, perm int) *os.File {
+	file, e := os.OpenFile(fname, mode, os.FileMode(perm))
+	if e != nil {
+		panic(e)
+	}
+	return file
+}
+
+func QuickRead(filename string) []byte {
 	var (
 		buf  bytes.Buffer
 		file *os.File
@@ -96,9 +88,6 @@ func Quick_Read(filename string) []byte {
 	if file, e = os.Open(filename); e != nil {
 		return nil
 	}
-	/* if n, e = file.Read(ret); e != nil || int64(n) != st.Size() {
-		log.Panicf("Unexpected io error: %s, (n=%d, size=%d)", e, n, st.Size())
-	} */
 
 	if _, e = buf.ReadFrom(file); e != nil {
 		log.Panicf("Unexpected read error: %v\n", e)
@@ -108,7 +97,7 @@ func Quick_Read(filename string) []byte {
 	return buf.Bytes()
 }
 
-func Unique_Str(strlist []string) []string {
+func UniqueStr(strlist []string) []string {
 	keys := make(map[string]bool)
 	ret := []string{}
 
@@ -123,4 +112,22 @@ func Unique_Str(strlist []string) []string {
 	}
 
 	return ret
+}
+
+func StrEqAny(cmp string, lst ...string) bool {
+	for _, s := range lst {
+		if cmp == s {
+			return true
+		}
+	}
+	return false
+}
+
+func StrEqAll(cmp string, lst ...string) bool {
+	for _, s := range lst {
+		if cmp != s {
+			return false
+		}
+	}
+	return true
 }

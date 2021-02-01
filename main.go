@@ -69,7 +69,7 @@ func handle_opts() []string {
 		opt.infname = args[0]
 	}
 
-	if str_eq_any(opt.outfile.name, "", "-") {
+	if util.StrEqAny(opt.outfile.name, "", "-") {
 		opt.outfile.fp = os.Stdout
 	} else {
 		fp, err := os.Create(opt.outfile.name)
@@ -107,22 +107,4 @@ func do_translate() {
 	// translate.TestReader(opt.outfile.fp, doc)
 	// translation.TestTranslate(opt.outfile.fp, doc)
 	translation.Translate(opt.outfile.fp, doc)
-}
-
-func str_eq_any(cmp string, lst ...string) bool {
-	for _, s := range lst {
-		if cmp == s {
-			return true
-		}
-	}
-	return false
-}
-
-func str_eq_all(cmp string, lst ...string) bool {
-	for _, s := range lst {
-		if cmp != s {
-			return false
-		}
-	}
-	return true
 }

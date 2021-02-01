@@ -53,7 +53,7 @@ SString: ['] ('\\'['] | ~['])* ['];
 
 /* And my types... */
 Variable: '$' IdentChar+;
-Identifier: IdentHead IdentChar*;
+BareIdentifier: IdentHead IdentChar*;
 AttributeValue: '"' (~'"' | '\\"')* '"';
 
 LineComment:  '//' .*? Newline;
@@ -74,19 +74,14 @@ fileTypeStmt
 	: xmlStmt compoundStmt
 	;
 
-maybeCompoundStmt
-	: ';'
-	| compoundStmt
-	;
-
 compoundStmt
 	: '{' statement* '}'
 	;
 
 statement
 	: commentStmt
-	| conditionStmt statement //compoundStmt
-	| xmlStmt       statement //maybeCompoundStmt
+	| conditionStmt statement
+	| xmlStmt       statement
         | compoundStmt
         | ';'
 	;
@@ -99,20 +94,21 @@ commentStmt
 
 /* Generic XML statement */
 xmlStmt
-	: Ident=Identifier '<' Lst=attributeList? '>'
+	: Ident=BareIdentifier '<' Lst=attributeList? '>'
 	;
 
 attributeList
-    : attributeList attribute
-    | attribute
-    ;
+        : attribute+
+//      : attributeList attribute
+//      | attribute              
+        ;
 
 attribute
 	: Ident=specialXmlIdentifier '=' Val=AttributeValue
 	;
 
 specialXmlIdentifier
-	: Identifier (':' Identifier)?
+	: BareIdentifier (':' BareIdentifier)?
         | keywordClash
 	;
 
@@ -153,9 +149,9 @@ expression
         | 'if' expression 'then' expression ('else' expression)? # terniary_expression
 	;
 
-predicate
-        : 'chance' expression
-        ;
+//predicate
+//        : 'chance' expression
+//        ;
 
 object
         : first_obj_fragment ('.' obj_fragment)*
@@ -174,10 +170,15 @@ obj_fragment
 
 myterminal
         : '[' (expression (',' expression)*)? ']'
-        | 'table' '[' (expression (',' expression)*)? ']'
+        | 'table' '[' (table_assignment (',' table_assignment)*)? ']'
         | identifier
 	| literal
 	;
+
+table_assignment
+        : '{' literal '}' '=' expression
+        | Variable '=' expression
+        ;
 
 literal
 	: SString
@@ -193,8 +194,8 @@ literal
 	;
 
 identifier
-	: Identifier
+	: BareIdentifier
 	| Variable
 	;
 
-
+// vim: tw=0
