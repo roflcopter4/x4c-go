@@ -18,8 +18,8 @@ dirs   := config myxml util util/color \
 	  translation/gen/scriptparser \
 	  translation \
 	  translation/ast \
-	  translation/translate \
-	  translation/untranslate
+	  translation/handle_script \
+	  translation/handle_xml
 
 all: antlr .WAIT install_dirs
 	go build

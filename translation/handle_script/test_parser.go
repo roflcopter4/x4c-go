@@ -1,4 +1,4 @@
-package untranslate
+package handle_script
 
 import (
 	"fmt"
@@ -23,8 +23,7 @@ type ScriptListener struct {
 var evil [3]string
 
 const (
-	_ = iota
-	_EXPRESSION_ENTER
+	_EXPRESSION_ENTER = iota + 1
 	_EXPRESSION_EXIT
 )
 

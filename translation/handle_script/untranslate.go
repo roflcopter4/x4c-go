@@ -1,4 +1,4 @@
-package untranslate
+package handle_script
 
 import (
 	"fmt"
@@ -40,23 +40,23 @@ type listener struct {
 	cur   ast.Node
 	block ast.Node
 
-	cs  antlr.CharStream
+	chs antlr.CharStream
 	lex *parser.X4CLexer
 	par *parser.X4CParser
 }
 
 func TestLexer(str string, isfile bool) {
 	var (
-		cs    antlr.CharStream
+		chs   antlr.CharStream
 		lexer *parser.X4CLexer
 	)
 
 	if isfile {
-		cs, lexer = get_lexer(str)
+		chs, lexer = get_lexer(str)
 
 	} else {
-		cs = antlr.NewInputStream(str)
-		lexer = parser.NewX4CLexer(cs)
+		chs = antlr.NewInputStream(str)
+		lexer = parser.NewX4CLexer(chs)
 	}
 
 	for {
@@ -66,20 +66,20 @@ func TestLexer(str string, isfile bool) {
 		}
 		ind := t.GetStart()
 		fmt.Printf("%s (%q) -> (%d: %v)\n",
-			lexer.SymbolicNames[t.GetTokenType()], t.GetText(), ind, cs.GetText(t.GetStart(), t.GetStop()))
+			lexer.SymbolicNames[t.GetTokenType()], t.GetText(), ind, chs.GetText(t.GetStart(), t.GetStop()))
 	}
-	fmt.Println(cs.GetText(0, cs.Size()))
+	fmt.Println(chs.GetText(0, chs.Size()))
 }
 
 func parse_file(fname string) ast.AST {
 	var (
-		cs, lexer = get_lexer(fname)
-		stream    = antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel)
-		par       = parser.NewX4CParser(stream)
+		chs, lexer = get_lexer(fname)
+		stream     = antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel)
+		par        = parser.NewX4CParser(stream)
 
 		l = &listener{
 			a:   ast.NewAst(),
-			cs:  cs,
+			chs: chs,
 			lex: lexer,
 			par: par,
 		}
@@ -166,7 +166,7 @@ func (l *listener) handle_conditional_statement(lst_i parser.IConditionExprConte
 		add_attrs(expr.XML, lst.AttributeList().GetChildren())
 	} else {
 		cond := lst.Expression()
-		val := l.cs.GetText(cond.GetStart().GetStart(), cond.GetStop().GetStop())
+		val := l.chs.GetText(cond.GetStart().GetStart(), cond.GetStop().GetStop())
 		expr.Raw = val
 	}
 
@@ -206,7 +206,7 @@ func (l *listener) EnterElseStmt(c *parser.ElseStmtContext) {
 //		} else {
 //			// Actually handle the condition properly.
 //			expr := ctx.Expression()
-//			val := l.cs.GetText(expr.GetStart().GetStart(), expr.GetStop().GetStop())
+//			val := l.chs.GetText(expr.GetStart().GetStart(), expr.GetStop().GetStop())
 //			stmt.AddAttribute("value", ast.NewExpression(val))
 //		}
 //	} else {

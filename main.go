@@ -38,7 +38,7 @@ func main() {
 
 	switch opt.operation {
 	case "u":
-		translation.UnTranslate(opt.outfile.fp, opt.infname)
+		translation.Translate_Script(opt.outfile.fp, opt.infname)
 	case "t":
 		do_translate()
 	case "q":
@@ -106,5 +106,6 @@ func do_translate() {
 
 	// translate.TestReader(opt.outfile.fp, doc)
 	// translation.TestTranslate(opt.outfile.fp, doc)
-	translation.Translate(opt.outfile.fp, doc)
+	translation.SetIndent(2)
+	translation.Translate_XML(opt.outfile.fp, doc)
 }
