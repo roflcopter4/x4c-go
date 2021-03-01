@@ -33,7 +33,7 @@ PowerOp          : '^';
 UnaryPostfixOp   : '?';
 UnaryOp          : '@' | 'typeof' ;
 NegationOp       : 'not' | '!' ;
-ComparitiveOp    : 'le' | 'ge' | 'lt' | 'gt' | '<=' | '>=' | '<' | '>' ;
+ComparitiveOp    : 'le' | 'ge' | 'lt' | 'gt'  | '<' | '>' | '<=' | '>=' ;
 EqualityOp       : '==' | '!=' ;
 AndOp            : 'and' | '&&' ; // I may or may not allow 'C' style logical operators.
 OrOp             : 'or' | '||' ;
@@ -44,6 +44,14 @@ DistanceValue: (INT+ | FLOAT) [ ]* ('m'|'km');
 CreditValue:   (INT+ | FLOAT) [ ]* ('ct'|'Cr');
 DegreeValue:   (INT+ | FLOAT) [ ]* ('deg'|'rad');
 HealthValue:   (INT+ | FLOAT) [ ]* 'hp';
+
+PostfixTime:     ('ms' | 's' | 'min' | 'h');
+PostfixDistance: ('m' | 'km');
+PostfixMoney:    ('ct' | 'Cr');
+PostfixAngle:    ('deg' | 'rad');
+PostfixHealth:   'hp';
+
+/* UnaryPostfixModifier: 'ms' | 's' | 'min' | 'h' | 'm' | 'km' | 'ct' | 'Cr' | 'deg' | 'rad' | 'hp'; */
 
 Float  : FLOAT [ ]* ('f'|'LF')?
        | INT+ [ ]* ('f'|'LF');
@@ -59,6 +67,8 @@ AttributeValue: '"' (~'"' | '\\"')* '"';
 LineComment:  '//' .*? Newline;
 BlockComment: '/*' .*? '*/';
 
+BlankLine: Newline Whitespace* Newline;
+
 Newline:    ('\r\n' | '\n') -> skip;
 Whitespace: [\t ]+          -> skip;
 
@@ -70,6 +80,8 @@ document
 	: fileTypeStmt commentStmt* EOF
 	;
 
+debugStatement: expression EOF ;
+
 fileTypeStmt
 	: xmlStmt compoundStmt
 	;
@@ -79,12 +91,17 @@ compoundStmt
 	;
 
 statement
-	: commentStmt
+	: blankLine
+        | commentStmt
 	| conditionStmt statement
 	| xmlStmt       statement
         | compoundStmt
         | ';'
 	;
+
+blankLine
+        : BlankLine
+        ;
 
 /* Comments. Let's pretend they're statements because I'm lazy and dumb. */
 commentStmt
@@ -114,6 +131,7 @@ specialXmlIdentifier
 
 keywordClash
         : 'chance' | 'in' | 'table'
+        //| 'ms' | 's' | 'min' | 'h' | 'm' | 'km' | 'ct' | 'Cr' | 'deg' | 'rad' | 'hp'
         ;
 
 /* Condition statement: if/elseif/else/while. Sanity checking the if/else chain
@@ -134,19 +152,21 @@ conditionExpr
 /****************************************************************************************/
 
 expression
-        : object                                                 # object_expression
-        | (AdditiveOp|UnaryOp) expression                        # unary_expression
-        |<assoc=right> expression UnaryPostfixOp                 # unary_postfix_expression
-        | NegationOp expression                                  # negation_expression
-        | BuiltinFunction '(' expression ')'                     # builtin_function_expression
-        | expression PowerOp expression                          # power_expression
-        | expression MultiplicativeOp expression                 # multiplicative_expression
-        | expression AdditiveOp expression                       # additive_expression
-        | expression ComparitiveOp expression                    # comparitive_expression
-        | expression EqualityOp expression                       # equality_expression
-        | expression AndOp expression                            # and_expression
-        | expression OrOp expression                             # or_expression
-        | 'if' expression 'then' expression ('else' expression)? # terniary_expression
+        : object                                                 # expr_object
+        | (AdditiveOp|UnaryOp) expression                        # expr_unary
+        |<assoc=right> expression UnaryPostfixOp                 # expr_unary_postfix
+//        | unary_postfix_modifier_expression_impl                 # expr_unary_postfix_modifier
+        |<assoc=right> expression unaryPostfixModifier           # expr_unary_postfix_modifier
+        | NegationOp expression                                  # expr_negation
+        | BuiltinFunction '(' expression ')'                     # expr_builtin_function
+        | expression PowerOp expression                          # expr_power
+        | expression MultiplicativeOp expression                 # expr_multiplicative
+        | expression AdditiveOp expression                       # expr_additive
+        | expression comparitiveOp expression                    # expr_comparitive
+        | expression EqualityOp expression                       # expr_equality
+        | expression AndOp expression                            # expr_and
+        | expression OrOp expression                             # expr_or
+        | 'if' expression 'then' expression ('else' expression)? # expr_terniary
 	;
 
 //predicate
@@ -155,12 +175,11 @@ expression
 
 object
         : first_obj_fragment ('.' obj_fragment)*
-        | literal
         ;
 
 first_obj_fragment
         : '(' expression ')' 
-        | myterminal
+        | base_object
         ;
 
 obj_fragment
@@ -168,11 +187,10 @@ obj_fragment
         | '{' expression '}'
         ;
 
-myterminal
-        : '[' (expression (',' expression)*)? ']'
-        | 'table' '[' (table_assignment (',' table_assignment)*)? ']'
-        | identifier
-	| literal
+base_object
+        : '[' (expression (',' expression)*)? ']'                     # square_bracket_expr
+        | 'table' '[' (table_assignment (',' table_assignment)*)? ']' # table_definition
+        | (identifier | literal)                                      # base_token
 	;
 
 table_assignment
@@ -197,5 +215,36 @@ identifier
 	: BareIdentifier
 	| Variable
 	;
+
+//unary_postfix_modifier_expression_impl
+//        :<assoc=right> expression PostfixTime     # postfix_time_expression
+//        |<assoc=right> expression PostfixDistance # postfix_distance_expression
+//        |<assoc=right> expression PostfixMoney    # postfix_money_expression
+//        |<assoc=right> expression PostfixAngle    # postfix_angle_expression
+//        |<assoc=right> expression PostfixHealth   # postfix_health_expression
+//        ;
+
+//        : ('ms' | 's' | 'min' | 'h') # postfix_time
+//        | ('m' | 'km')               # postfix_distance
+//        | ('ct' | 'Cr')              # postfix_money
+//        | ('deg' | 'rad')            # postfix_angle
+//        | 'hp'                       # postfix_hp
+
+unaryPostfixModifier
+        : PostfixTime
+        | PostfixDistance
+        | PostfixMoney
+        | PostfixAngle
+        | PostfixHealth
+        ;
+
+comparitiveOp : 'le' | 'ge' | 'lt' | 'gt'  | '<' | '>' | '<=' | '>=' ;
+
+//        : ('ms' | 's' | 'min' | 'h') # postfix_time
+//        | ('m' | 'km')               # postfix_distance
+//        | ('ct' | 'Cr')              # postfix_money
+//        | ('deg' | 'rad')            # postfix_angle
+//        | 'hp'                       # postfix_hp
+//        ;
 
 // vim: tw=0

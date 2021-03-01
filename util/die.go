@@ -32,7 +32,7 @@ func DieE(status int, err error) {
 	Die(status, "%+v", err)
 }
 
-func PanicE(err error) {
+func PanicUnwrap(err error) {
 	panic(Unwrap(err))
 }
 

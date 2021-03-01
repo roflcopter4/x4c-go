@@ -217,6 +217,10 @@ func (l *ScriptListener) ExitBuiltin_function_expression(ctx *script.Builtin_fun
 	l.mydump(ctx, _EXPRESSION_EXIT)
 }
 
+// func (l *ScriptListener) EnterBlankLine(ctx *script.BlankLineContext) {
+//       l.mydump(ctx, _EXPRESSION_EXIT)
+// }
+
 //
 //func (v *ScriptListener) EnterParen_expression(ctx *script.Paren_expressionContext) { mydump(ctx) }
 //

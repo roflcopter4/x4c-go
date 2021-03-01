@@ -7,19 +7,10 @@ import (
 	"strings"
 
 	"github.com/antlr/antlr4/runtime/Go/antlr"
-	"github.com/davecgh/go-spew/spew"
 
 	"github.com/roflcopter4/x4c-go/translation/ast"
 	"github.com/roflcopter4/x4c-go/translation/gen/parser"
 )
-
-func init() {
-	spew.Config.Indent = "  "
-	spew.Config.DisableCapacities = true
-	// spew.Config.DisableMethods = true
-	// spew.Config.DisablePointerMethods = true
-	spew.Config.DisablePointerAddresses = true
-}
 
 func Translate(outfp *os.File, fname string) {
 	tree := parse_file(fname)
@@ -29,20 +20,6 @@ func Translate(outfp *os.File, fname string) {
 
 	out = strings.ReplaceAll(out, "&#10;", "\n")
 	outfp.WriteString(out)
-}
-
-/****************************************************************************************/
-
-type listener struct {
-	*parser.BaseX4CListener
-
-	a     ast.AST
-	cur   ast.Node
-	block ast.Node
-
-	chs antlr.CharStream
-	lex *parser.X4CLexer
-	par *parser.X4CParser
 }
 
 func TestLexer(str string, isfile bool) {
@@ -66,9 +43,24 @@ func TestLexer(str string, isfile bool) {
 		}
 		ind := t.GetStart()
 		fmt.Printf("%s (%q) -> (%d: %v)\n",
-			lexer.SymbolicNames[t.GetTokenType()], t.GetText(), ind, chs.GetText(t.GetStart(), t.GetStop()))
+			lexer.SymbolicNames[t.GetTokenType()], t.GetText(), ind,
+			chs.GetText(t.GetStart(), t.GetStop()))
 	}
 	fmt.Println(chs.GetText(0, chs.Size()))
+}
+
+/****************************************************************************************/
+
+type listener struct {
+	*parser.BaseX4CListener
+
+	a     ast.AST
+	cur   ast.Node
+	block ast.Node
+
+	chs antlr.CharStream
+	lex *parser.X4CLexer
+	par *parser.X4CParser
 }
 
 func parse_file(fname string) ast.AST {
@@ -150,6 +142,10 @@ func (l *listener) EnterCommentStmt(c *parser.CommentStmtContext) {
 	}
 
 	l.block.AddComment(txt)
+}
+
+func (l *listener) EnterBlankLine(c *parser.BlankLineContext) {
+	l.block.AddTextNode("")
 }
 
 /****************************************************************************************/

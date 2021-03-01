@@ -13,7 +13,6 @@ import (
 	"strings"
 
 	"github.com/roflcopter4/x4c-go/translation/ast"
-	"github.com/roflcopter4/x4c-go/util"
 )
 
 const DEFAULT_INDENT = 4
@@ -77,8 +76,11 @@ func (data *cur_data) handle_node(node ast.Node) string {
 	case *ast.ConditionStatement:
 		str = data.handle_conditional_statement(n)
 
+	case *ast.XMLText:
+		str = n.Text
+
 	default:
-		util.Die(1, "Invalid type somehow (%[1]T):\n(%#[1]v)", n)
+		panic(fmt.Sprintf("Invalid type somehow (%[1]T):\n(%#[1]v)", n))
 	}
 
 	return str

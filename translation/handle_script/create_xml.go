@@ -2,6 +2,8 @@ package handle_script
 
 import (
 	// XML "github.com/lestrrat-go/libxml2"
+	"fmt"
+
 	XMLtypes "github.com/lestrrat-go/libxml2/types"
 	// XMLxsd "github.com/lestrrat-go/libxml2/xsd"
 	XMLdom "github.com/lestrrat-go/libxml2/dom"
@@ -10,7 +12,6 @@ import (
 	// XMLreader "github.com/roflcopter4/xml_addon/reader"
 
 	"github.com/roflcopter4/x4c-go/translation/ast"
-	"github.com/roflcopter4/x4c-go/util"
 )
 
 type cur_data struct {
@@ -21,7 +22,7 @@ type cur_data struct {
 
 func create_xml(tree ast.AST) *XMLdom.Document {
 	data := new(cur_data)
-	data.doc = XMLdom.NewDocument("1.0", "UTF-8")
+	data.doc = XMLdom.NewDocument("1.0", "utf-8")
 	data.tree = tree
 	data.cur = nil
 
@@ -63,6 +64,14 @@ func (data *cur_data) handle_node(node ast.Node) XMLtypes.Node {
 		data.cur.AddChild(el)
 		ret = el
 
+	case *ast.XMLText:
+		// txt, err := data.doc.CreateTextNode("\n")
+		// if err != nil {
+		//       panic(err)
+		// }
+		// data.cur.AddChild(txt)
+		// ret = txt
+
 	case *ast.XMLComment:
 		com, err := data.doc.CreateCommentNode(n.Text)
 		if err != nil {
@@ -90,12 +99,14 @@ func (data *cur_data) handle_node(node ast.Node) XMLtypes.Node {
 		ret = el
 
 	case *ast.AstNode:
-		util.Die(1, "Invalid type somehow %+v\n", n)
+		panic(fmt.Sprintf("Invalid type somehow %+v\n", n))
 	default:
-		util.Die(1, "Invalid type somehow %+v\n", n)
+		panic(fmt.Sprintf("Invalid type somehow %+v\n", n))
 	}
 
-	ret.MakeMortal()
+	if ret != nil {
+		ret.MakeMortal()
+	}
 	return ret
 }
 

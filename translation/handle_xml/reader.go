@@ -16,8 +16,6 @@ import (
 
 	"github.com/roflcopter4/x4c-go/myxml"
 	"github.com/roflcopter4/x4c-go/translation/ast"
-
-	// "github.com/roflcopter4/x4c-go/translation/newast"
 	"github.com/roflcopter4/x4c-go/util"
 )
 
@@ -49,24 +47,32 @@ func Translate(outfp *os.File, doc myxml.DocWrapper) {
 	for reader.TextRead() != 0 {
 		node, _ := reader.CurrentNode()
 
+		/* Sometimes text nodes and comments have to be identified via the node,
+		 * other times things work just fine via the reader. I dunno. I'm probably
+		 * doing something wrong but who knows what. */
 		switch node.NodeType() {
+		case XMLclib.TextNode:
+			b.TextNode(node)
+
 		case XMLclib.CommentNode:
 			b.CommentNode(node)
-			continue
+
+		default:
+			switch reader.NodeType() {
+			case XMLreader.Reader_Text:
+				b.TextNode(node)
+
+			case XMLreader.Reader_Comment:
+				b.CommentNode(node)
+
+			case XMLreader.Reader_Element:
+				b.StartElement(node)
+
+			case XMLreader.Reader_EndElement:
+				b.EndElement(node)
+			}
 		}
 
-		switch reader.NodeType() {
-		case XMLreader.Reader_Text:
-
-		case XMLreader.Reader_Comment:
-			b.CommentNode(node)
-
-		case XMLreader.Reader_Element:
-			b.StartElement(node)
-
-		case XMLreader.Reader_EndElement:
-			b.EndElement(node)
-		}
 	}
 
 	lines := make_output(b.a)
@@ -109,6 +115,12 @@ func (b *builder) EndElement(node XMLtypes.Node) {
 
 //========================================================================================
 
+func (b *builder) TextNode(node XMLtypes.Node) {
+	for nnl := strings.Count(node.NodeValue(), "\n"); nnl > 1; nnl-- {
+		b.block.AddTextNode("")
+	}
+}
+
 func (b *builder) CommentNode(node XMLtypes.Node) {
 	b.block.AddComment(node.NodeValue())
 }
@@ -132,6 +144,7 @@ func (b *builder) Conditional(node XMLtypes.Node, ctype int) {
 		b.rd.MoveToAttributeNo(0)
 
 		if nattr == 1 && b.rd.Name() == "value" {
+			new_dump(b.rd.Name(), b.rd.Value())
 			expr.Raw = b.rd.Value()
 		} else {
 			attr, _ := node.(XMLtypes.Element).Attributes()
@@ -180,10 +193,14 @@ func get_attr_string(lst []XMLtypes.Attribute) (ret string) {
 	return
 }
 
+func new_dump(name, val string) {
+	util.Eprintf("Looking at expression `%s=\"%s\"`\n", name, val)
+	// newast.Parse_Expression(val)
+}
+
 func lazy_lazy_lazy(name, val string) *ast.Expression {
 	// if !util.StrEqAny(name, "comment", "xmlns:xsi", "xsi:noNamespaceSchemaLocation") {
-	//       fmt.Printf("Looking at expression `%s=\"%s\"`\n", name, val)
-	//       newast.Parse_Expression(val)
+	//       new_dump(name, val)
 	// }
 	return ast.NewExpression(val)
 }

@@ -55,9 +55,9 @@ func (n *AstNode) AddComment(text string) *XMLComment {
 }
 
 func (n *AstNode) AddTextNode(text string) *XMLText {
-	if text == "" {
-		return nil
-	}
+	// if text == "" {
+	//       return nil
+	// }
 	child := new(XMLText)
 	n.init(child)
 

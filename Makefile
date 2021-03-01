@@ -9,6 +9,8 @@
 
 .SUFFIXES: .g4 .go
 
+local_go_args := #-compiler gccgo -gccgoflags '-O3 -march=native -g'
+
 maingrammar   := translation/gen/X4C.g4
 scriptgrammar := translation/gen/Script.g4
 
@@ -22,16 +24,16 @@ dirs   := config myxml util util/color \
 	  translation/handle_xml
 
 all: antlr .WAIT install_dirs
-	go build
-
-quick: antlr
-	go build
+	go build ${local_go_args}
 
 fast:
-	go build
+	go build ${local_go_args}
 
-skip: install_dirs
-	go build
+parser: antlr
+	go build ${local_go_args}
+
+dirs: install_dirs
+	go build ${local_go_args}
 
 antlr:
 	antlr4 -Dlanguage=Go -package parser       -visitor -long-messages -o "${.CURDIR}/${maingrammar:H}/parser" "${.CURDIR}/${maingrammar}"
@@ -39,5 +41,5 @@ antlr:
 
 install_dirs:
 .for DIR in ${dirs}
-	go install "${.CURDIR}/${DIR}"
+	go install ${local_go_args} "${.CURDIR}/${DIR}"
 .endfor
