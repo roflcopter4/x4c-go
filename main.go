@@ -53,8 +53,8 @@ func main() {
 		translation.TestScriptLexer(args[0], true)
 	case "S":
 		translation.TestScriptLexer(args[0], false)
-	case "N":
-		translation.TestNewAst(args[0])
+	// case "N":
+	//       translation.TestNewAst(args[0])
 	default:
 	}
 }
