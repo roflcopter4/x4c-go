@@ -53,9 +53,13 @@ func main() {
 		translation.TestScriptLexer(args[0], true)
 	case "S":
 		translation.TestScriptLexer(args[0], false)
-	// case "N":
-	//       translation.TestNewAst(args[0])
+	case "N":
+		translation.TestNewAst(args[0])
 	default:
+	}
+
+	if opt.outfile.fp != os.Stdout {
+		opt.outfile.fp.Close()
 	}
 }
 

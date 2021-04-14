@@ -6,5 +6,5 @@
 #
 
 all:
-	@echo '\033[1;32mPlease use BSD Make (bmake).\033[0m' >&2
+	@printf '%b\n' '\033[1;31mPlease use BSD Make (bmake).\033[0m' >&2
 	@exit 1

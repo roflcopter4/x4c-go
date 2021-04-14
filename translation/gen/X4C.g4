@@ -4,9 +4,10 @@ grammar X4C;
 /* Lexer */
 
 /* Keywords */
-Keyword_Conditional: 'if' | 'elseif' | 'else' | 'while' ;
+//Keyword_Conditional: 'if' | 'elseif' | 'else' | 'while' ;
 BuiltinFunction : 'sin' | 'cos' | 'sqrt' | 'log' | 'exp';
-Keyword: 'in' | 'then' | 'nil' | 'chance';
+
+//Keyword: 'in' | 'then' | 'nil' | 'chance';
 
 fragment IdentHead: [a-zA-Z_];
 fragment IdentChar: [a-zA-Z0-9_];
@@ -27,29 +28,33 @@ Operator: '='
 	| ';' | ':' | '.' | ','
 	| '(' | ')' | '{' | '}' | '[' | ']';
 
-AdditiveOp       : '+' | '-' ;
-MultiplicativeOp : '*' | '/' | '%' ;
-PowerOp          : '^';
-UnaryPostfixOp   : '?';
-UnaryOp          : '@' | 'typeof' ;
-NegationOp       : 'not' | '!' ;
-ComparitiveOp    : 'le' | 'ge' | 'lt' | 'gt'  | '<' | '>' | '<=' | '>=' ;
-EqualityOp       : '==' | '!=' ;
-AndOp            : 'and' | '&&' ; // I may or may not allow 'C' style logical operators.
-OrOp             : 'or' | '||' ;
+/* TOK_TYPEOF: 'typeof'; */
+
+//AdditiveOp       : '+' | '-' ;
+//MultiplicativeOp : '*' | '/' | '%' ;
+//PowerOp          : '^';
+//UnaryPostfixOp   : '?';
+//UnaryOp          : '@' | 'typeof' ;
+//NegationOp       : 'not' | '!' ;
+//ComparitiveOp    : 'le' | 'ge' | 'lt' | 'gt'  | '<' | '>' | '<=' | '>=' ;
+//EqualityOp       : '==' | '!=' ;
+//AndOp            : 'and' | '&&' ; // I may or may not allow 'C' style logical operators.
+//OrOp             : 'or' | '||' ;
 
 /* Numbers and lots of etc */
-TimeValue:     (INT+ | FLOAT) [ ]* ('ms' | 's' | 'min' | 'h');
-DistanceValue: (INT+ | FLOAT) [ ]* ('m'|'km');
-CreditValue:   (INT+ | FLOAT) [ ]* ('ct'|'Cr');
-DegreeValue:   (INT+ | FLOAT) [ ]* ('deg'|'rad');
-HealthValue:   (INT+ | FLOAT) [ ]* 'hp';
+//TimeValue:     (INT+ | FLOAT) [ ]* ('ms' | 's' | 'min' | 'h');
+//DistanceValue: (INT+ | FLOAT) [ ]* ('m'|'km');
+//CreditValue:   (INT+ | FLOAT) [ ]* ('ct'|'Cr');
+//DegreeValue:   (INT+ | FLOAT) [ ]* ('deg'|'rad');
+//HealthValue:   (INT+ | FLOAT) [ ]* 'hp';
 
 PostfixTime:     ('ms' | 's' | 'min' | 'h');
 PostfixDistance: ('m' | 'km');
 PostfixMoney:    ('ct' | 'Cr');
 PostfixAngle:    ('deg' | 'rad');
 PostfixHealth:   'hp';
+PostfixInteger:  'i'|'L';
+PostfixFloat:    'f'|'LF';
 
 /* UnaryPostfixModifier: 'ms' | 's' | 'min' | 'h' | 'm' | 'km' | 'ct' | 'Cr' | 'deg' | 'rad' | 'hp'; */
 
@@ -67,7 +72,8 @@ AttributeValue: '"' (~'"' | '\\"')* '"';
 LineComment:  '//' .*? Newline;
 BlockComment: '/*' .*? '*/';
 
-BlankLine: Newline Whitespace* Newline;
+/* BlankLine: Newline Whitespace* Newline; */
+/* BlankLine: Newline Newline; */
 
 Newline:    ('\r\n' | '\n') -> skip;
 Whitespace: [\t ]+          -> skip;
@@ -91,17 +97,16 @@ compoundStmt
 	;
 
 statement
-	: blankLine
-        | commentStmt
+	: commentStmt
 	| conditionStmt statement
 	| xmlStmt       statement
         | compoundStmt
         | ';'
 	;
 
-blankLine
-        : BlankLine
-        ;
+//blankLine
+//        : BlankLine
+//        ;
 
 /* Comments. Let's pretend they're statements because I'm lazy and dumb. */
 commentStmt
@@ -130,8 +135,9 @@ specialXmlIdentifier
 	;
 
 keywordClash
-        : 'chance' | 'in' | 'table'
-        //| 'ms' | 's' | 'min' | 'h' | 'm' | 'km' | 'ct' | 'Cr' | 'deg' | 'rad' | 'hp'
+        : 'chance' | 'in' | 'table' | BuiltinFunction
+        | 'min' | 'max'
+//        | 'ms' | 's' | 'min' | 'h' | 'm' | 'km' | 'ct' | 'Cr' | 'deg' | 'rad' | 'hp'
         ;
 
 /* Condition statement: if/elseif/else/while. Sanity checking the if/else chain
@@ -152,61 +158,72 @@ conditionExpr
 /****************************************************************************************/
 
 expression
-        : object                                                 # expr_object
-        | (AdditiveOp|UnaryOp) expression                        # expr_unary
-        |<assoc=right> expression UnaryPostfixOp                 # expr_unary_postfix
-//        | unary_postfix_modifier_expression_impl                 # expr_unary_postfix_modifier
+        : object /*expression?*/                                 # expr_object
+        | unaryOp expression                                     # expr_unary
+        |<assoc=right> expression unaryPostfixOp                 # expr_unary_postfix
         |<assoc=right> expression unaryPostfixModifier           # expr_unary_postfix_modifier
-        | NegationOp expression                                  # expr_negation
+        | negationOp expression                                  # expr_negation
         | BuiltinFunction '(' expression ')'                     # expr_builtin_function
-        | expression PowerOp expression                          # expr_power
-        | expression MultiplicativeOp expression                 # expr_multiplicative
-        | expression AdditiveOp expression                       # expr_additive
+        | expression powerOp expression                          # expr_power
+        | expression multiplicativeOp expression                 # expr_multiplicative
+        | expression additiveOp expression                       # expr_additive
         | expression comparitiveOp expression                    # expr_comparitive
-        | expression EqualityOp expression                       # expr_equality
-        | expression AndOp expression                            # expr_and
-        | expression OrOp expression                             # expr_or
+        | expression equalityOp expression                       # expr_equality
+        | expression andOp expression                            # expr_and
+        | expression orOp expression                             # expr_or
         | 'if' expression 'then' expression ('else' expression)? # expr_terniary
 	;
 
-//predicate
-//        : 'chance' expression
-//        ;
-
 object
-        : first_obj_fragment ('.' obj_fragment)*
+        : primary_object ('.' secondary_object)*
         ;
 
-first_obj_fragment
-        : '(' expression ')' 
-        | base_object
+primary_object
+        : parenthetical
+        | table_definition
+        | list_definition
+        | simple_terminal
         ;
 
-obj_fragment
-        : first_obj_fragment
-        | '{' expression '}'
+secondary_object
+        : '{' expression '}'
+        | list_definition   // Format operations. FIXME: This is downright ugly.
+        | simple_terminal
+        | keywordClash
         ;
 
-base_object
-        : '[' (expression (',' expression)*)? ']'                     # square_bracket_expr
-        | 'table' '[' (table_assignment (',' table_assignment)*)? ']' # table_definition
-        | (identifier | literal)                                      # base_token
-	;
+table_definition
+        : 'table' '[' (table_assignment (',' table_assignment)* ','?)? ']'
+        ;
 
 table_assignment
-        : '{' literal '}' '=' expression
-        | Variable '=' expression
+        : '{' object '}' '=' expression
+        |  Variable      '=' expression
+        ;
+
+list_definition
+        : '[' (expression (',' expression)* ','?)? ']'
+        ;
+
+parenthetical
+	: '(' expression ')'
+        ;
+
+simple_terminal
+        : literal
+        | identifier
+//        | blankLine  // FIXME: UGH
         ;
 
 literal
 	: SString
 	| Float
 	| Integer
-	| DistanceValue
-	| DegreeValue
-	| HealthValue
-	| TimeValue
-	| CreditValue
+//	| DistanceValue
+//	| DegreeValue
+//	| HealthValue
+//	| TimeValue
+//	| CreditValue
         | TextDbRef
         | 'null'
 	;
@@ -236,9 +253,26 @@ unaryPostfixModifier
         | PostfixMoney
         | PostfixAngle
         | PostfixHealth
+        | PostfixInteger
+        | PostfixFloat
         ;
 
-comparitiveOp : 'le' | 'ge' | 'lt' | 'gt'  | '<' | '>' | '<=' | '>=' ;
+additiveOp: '+' | '-';
+multiplicativeOp: '*' | '/' | '%' ;
+powerOp: '^' ;
+unaryPostfixOp: '?' ;
+unaryOp: '+' | '-' | '@' | 'typeof' ;
+negationOp: 'not' | '!' ;
+comparitiveOp : rule_gt | rule_lt | rule_le | rule_ge;
+equalityOp: '==' | '!=' ;
+andOp: 'and' | '&&' ;
+orOp: 'or' | '||' ;
+
+rule_gt: 'gt' | '>';
+rule_lt: 'lt' | '<';
+rule_ge: 'ge' | '<=';
+rule_le: 'le' | '>=';
+
 
 //        : ('ms' | 's' | 'min' | 'h') # postfix_time
 //        | ('m' | 'km')               # postfix_distance

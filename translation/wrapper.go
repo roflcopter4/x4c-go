@@ -6,7 +6,7 @@ import (
 	"github.com/roflcopter4/x4c-go/myxml"
 	"github.com/roflcopter4/x4c-go/translation/handle_script"
 	"github.com/roflcopter4/x4c-go/translation/handle_xml"
-	// "github.com/roflcopter4/x4c-go/translation/newast"
+	"github.com/roflcopter4/x4c-go/translation/newast"
 )
 
 func TestTranslate(outfp *os.File, doc myxml.DocWrapper) {
@@ -26,13 +26,13 @@ func TestLexer(str string, isfile bool) {
 }
 
 func TestScriptLexer(str string, isfile bool) {
-	handle_script.TestScriptLexer(str, isfile)
+	// handle_script.TestScriptLexer(str, isfile)
 }
 
 func SetIndent(indent int) {
 	handle_xml.Indent_Size = indent
 }
 
-//func TestNewAst(expr string) {
-//	newast.Parse_Expression(expr)
-//}
+func TestNewAst(expr string) {
+	newast.Parse_Expression(nil, "<STDIN>", "<STDIN>", expr)
+}

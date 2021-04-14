@@ -11,17 +11,22 @@
 
 local_go_args := #-compiler gccgo -gccgoflags '-O3 -march=native -g'
 
-maingrammar   := translation/gen/X4C.g4
-scriptgrammar := translation/gen/Script.g4
+antlrdir     := ${.CURDIR}/translation/gen
+lexergrammar := ${antlrdir}/X4Lex.g4
+parsergrammar:= ${antlrdir}/X4Parse.g4
+combinedgrammar := ${antlrdir}/X4C.g4
 
 target := x4c
 dirs   := config myxml util util/color \
-	  translation/gen/parser \
-	  translation/gen/scriptparser \
+	  translation/gen/sepParser \
+	  translation/gen/sepLexer \
 	  translation \
 	  translation/ast \
 	  translation/handle_script \
-	  translation/handle_xml
+	  translation/handle_xml \
+	  translation/newast
+
+dirs_uscore := ${dirs:S/\//___/g}
 
 all: antlr .WAIT install_dirs
 	go build ${local_go_args}
@@ -36,10 +41,16 @@ dirs: install_dirs
 	go build ${local_go_args}
 
 antlr:
-	antlr4 -Dlanguage=Go -package parser       -visitor -long-messages -o "${.CURDIR}/${maingrammar:H}/parser" "${.CURDIR}/${maingrammar}"
-	antlr4 -Dlanguage=Go -package scriptparser -visitor -long-messages -o "${.CURDIR}/${scriptgrammar:H}/scriptparser" "${.CURDIR}/${scriptgrammar}"
+	antlr4 -Xexact-output-dir -Dlanguage=Go -package parser    -no-listener -no-visitor -long-messages -o "${antlrdir}/combined"  "${combinedgrammar}"
+	antlr4 -Xexact-output-dir -Dlanguage=Go -package sepParser -no-listener -no-visitor -long-messages -o "${antlrdir}/sepParser" "${parsergrammar}"
+	antlr4 -Xexact-output-dir -Dlanguage=Go -package sepLexer                           -long-messages -o "${antlrdir}/sepLexer"  "${lexergrammar}"
+#	antlr4 -Xexact-output-dir -Dlanguage=Go -package parser    -Xlog -atn -long-messages -o "${antlrdir}/combined"  "${combinedgrammar}"
 
-install_dirs:
-.for DIR in ${dirs}
-	go install ${local_go_args} "${.CURDIR}/${DIR}"
+install_dirs: ${dirs_uscore}
+
+.for DIR_USCORE in ${dirs_uscore}
+${DIR_USCORE}:
+	go install ${local_go_args} "${.CURDIR}/${DIR_USCORE:S/___/\//g}"
 .endfor
+
+.PHONY: ${dirs_uscore} all fast parser dirs antlr install_dirs
