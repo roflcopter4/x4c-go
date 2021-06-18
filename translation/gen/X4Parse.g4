@@ -1,68 +1,73 @@
 parser grammar X4Parse;
 
-//@header {
+@header {
 //import (
-//    "fmt"
 //)
-//}
-//
+
 //@members {
 //var x int
 //}
+}
 
-//tokens {
-//    TextDbRef, PostfixTime, PostfixDistance, PostfixMoney, PostfixAngle,
-//    PostfixHealth, PostfixInteger, PostfixFloat, Integer, SString, TOK_ELSE,
-//    TOK_ELSEIF, TOK_FOR, TOK_FOREACH, TOK_IF, TOK_LIST, TOK_NOT, TOK_TABLE,
-//    TOK_THEN, TOK_WHILE, OP_EQ, OP_NEQ, OP_LE, OP_GE, OP_AND, OP_OR, TOK_AND,
-//    TOK_OR, TOK_GE, TOK_GT, TOK_LE, TOK_LT, ATSIGN, BACKSLASH, DOLLAR, EQUALS,
-//    EXCLAM, QMARK, LBRACKET, RBRACKET, LBRACE, RBRACE, LPAREN, RPAREN, RANGLE,
-//    LANGLE, POWER, PLUS, MINUS, ASTERIX, SLASH, PERCENT, COLON, COMMA, PERIOD,
-//    SEMICOLON, SQUOTE, DQUOTE, Variable, BareIdentifier, AttributeValue,
-//    LineComment, BlockComment, Newline, Whitespace, TOK_NULL, TOK_CHANCE, TOK_IN,
-//    TOK_MIN, TOK_MAX, BuiltinFunction, Float, TOK_TYPEOF
-//}
+
+/*
+ * NOTE MUST BE IN THE SAME ORDER AS LISTED IN THE LEXER!!!!!!
+ * Look. You're lazy. Yes, you. You know it, I know it, and you know I know it.
+ * Here's a one liner to extract the things. You're welcome. It'll probably
+ * miss any with the colon not on the same line as the token ID though.
+ *
+ * perl -wnE 'my @m = m/^([A-Z_]\w+?)\s*:/; print "@m, " if @m;' ./translation/gen/X4Lex.g4 && echo
+ */
 
 tokens {
-    BuiltinFunction, TextDbRef, PostfixTime, PostfixDistance, PostfixMoney,
-    PostfixAngle, PostfixHealth, PostfixInteger, PostfixFloat, Float, Integer, SString,
-    TOK_CHANCE, TOK_ELSE, TOK_ELSEIF, TOK_FOR, TOK_FOREACH, TOK_IF, TOK_IN,
-    TOK_NOT, TOK_NULL, TOK_TABLE, TOK_THEN, TOK_TYPEOF, TOK_WHILE, TOK_MIN, TOK_MAX,
-    OP_EQ, OP_NEQ, OP_LE, OP_GE, OP_AND, OP_OR, TOK_AND, TOK_OR, TOK_GE, TOK_GT, TOK_LE,
-    TOK_LT, ATSIGN, BACKSLASH, DOLLAR, EQUALS, EXCLAM, QMARK, LBRACKET, RBRACKET, LBRACE,
-    RBRACE, LPAREN, RPAREN, LANGLE, RANGLE, POWER, PLUS, MINUS, ASTERIX, SLASH, PERCENT,
-    COLON, COMMA, PERIOD, SEMICOLON, SQUOTE, DQUOTE, Variable, BareIdentifier,
-    AttributeValue, LineComment, BlockComment, Newline, Whitespace
+    BuiltinFunction, TextDbRef, Float, Integer, SString, /*AdditiveOp,
+    MultiplicativeOp, PowerOp, NegationOp, ComparitiveOp, EqualityOp,
+    AndOp, OrOp, UnaryPostfixOp, UnaryOp, UnaryPostfixModifier, Postfix_Distance,
+    Postfix_Money, Postfix_Time, Postfix_Angle, Postfix_Health, Postfix_Integer,
+    Postfix_Float,*/ ATSIGN, BACKSLASH, DOLLAR, EQUALS, EXCLAM, QMARK,
+    LBRACKET, RBRACKET, LBRACE, RBRACE, LPAREN, RPAREN, LANGLE, RANGLE,
+    POWER, PLUS, MINUS, ASTERIX, SLASH, PERCENT, COLON, COMMA, PERIOD,
+    SEMICOLON, SQUOTE, DQUOTE, TOK_CHANCE, TOK_ELSE, TOK_ELSEIF, TOK_FOR,
+    TOK_FOREACH, TOK_IF, TOK_IN, TOK_LIST, TOK_NOT, TOK_NULL, TOK_TABLE,
+    TOK_THEN, TOK_TYPEOF, TOK_WHILE, TOK_MIN, TOK_MAX, OP_EQ, OP_NEQ,
+    OP_LE, OP_GE, OP_AND, OP_OR, TOK_AND, TOK_OR, TOK_GE, TOK_GT, TOK_LE,
+    TOK_LT, TOK_MS, TOK_S, TOK_H, TOK_M, TOK_KM, TOK_CT, TOK_CR, TOK_DEG,
+    TOK_RAD, TOK_HP, TOK_I, TOK_L, TOK_F, TOK_LF, Variable, BareIdentifier,
+    AttributeValue, LineComment, BlockComment, Newline, Whitespace, Garbage
 }
 
 /****************************************************************************************/
 /* Parser */
 
-document
-	: fileTypeStmt commentStmt* EOF
-	;
-
-debugStatement: expression EOF ;
+document:       fileTypeStmt commentStmt* EOF;
+debugStatement: expression EOF;
 
 fileTypeStmt
 	: xmlStmt compoundStmt
 	;
 
 compoundStmt
-	: RBRACE statement* LBRACE
+	: LBRACE pseudoStatement* RBRACE
+	;
+
+pseudoStatement
+	: commentStmt
+	| statement
 	;
 
 statement
-	: commentStmt
-	| conditionStmt statement
-	| xmlStmt       statement
-        | compoundStmt
-        | SEMICOLON
+	: conditionStmt statementEnding
+	| xmlStmt       statementEnding
 	;
 
-//blankLine
-//        : BlankLine
-//        ;
+statementEnding
+	: compoundStmt
+	| SEMICOLON
+	;
+
+
+/*--------------------------------------------------------------------------------------*/
+
 
 /* Comments. Let's pretend they're statements because I'm lazy and dumb. */
 commentStmt
@@ -76,10 +81,8 @@ xmlStmt
 	;
 
 attributeList
-        : attribute+
-//      : attributeList attribute
-//      | attribute              
-        ;
+	: attribute+
+	;
 
 attribute
 	: Ident=specialXmlIdentifier EQUALS Val=AttributeValue
@@ -87,116 +90,125 @@ attribute
 
 specialXmlIdentifier
 	: BareIdentifier (COLON BareIdentifier)?
-        | keywordClash
+	| keywordClash
 	;
 
 keywordClash
-        : TOK_CHANCE | TOK_IN | TOK_TABLE | BuiltinFunction
-        | TOK_MIN | TOK_MAX
-//        | 'ms' | 's' | 'min' | 'h' | 'm' | 'km' | 'ct' | 'Cr' | 'deg' | 'rad' | 'hp'
-        ;
+	: TOK_CHANCE | TOK_IN | TOK_TABLE | TOK_LIST | builtinFunction
+	;
+
+builtinFunction
+	: BuiltinFunction
+	| TOK_MIN | TOK_MAX
+	;
 
 /* Condition statement: if/elseif/else/while. Sanity checking the if/else chain
  * is handled in the code because I couldn't think of a way to do it here. */
 conditionStmt
 	: Ident=TOK_IF     Lst=conditionExpr # ifStmt
 	| Ident=TOK_ELSEIF Lst=conditionExpr # elseifStmt
-        | Ident=TOK_WHILE  Lst=conditionExpr # whileStmt
+	| Ident=TOK_WHILE  Lst=conditionExpr # whileStmt
 	| Ident=TOK_ELSE                     # elseStmt
 	;
 
 /* As a special case conditions will allow xml style statements for now. */
 conditionExpr
-	: RANGLE attributeList LANGLE
-        | LPAREN expression RPAREN
+	: LANGLE attributeList RANGLE
+	| LPAREN expression RPAREN
 	;
+
 
 /****************************************************************************************/
 
 
+expressionList
+	: expression (COMMA expression)*
+	;
 
 expression
-        : unaryOp expression                                           # subexpr_unary
-        //|<assoc=right> expression unaryPostfixOp                       # subexpr_unary_postfix
-        //|<assoc=right> expression unaryPostfixModifier                 # subexpr_unary_postfix_modifier
-        | negationOp expression                                        # subexpr_negation
-        //| BuiltinFunction LPAREN expression RPAREN                     # subexpr_builtin_function
-        | expression powerOp expression                                # subexpr_power
-        | expression multiplicativeOp expression                       # subexpr_multiplicative
-        | expression additiveOp expression                             # subexpr_additive
-        | expression comparitiveOp expression                          # subexpr_comparitive
-        | expression equalityOp expression                             # subexpr_equality
-        | expression andOp expression                                  # subexpr_and
-        | expression orOp expression                                   # subexpr_or
-        | TOK_IF expression TOK_THEN expression (TOK_ELSE expression)? # subexpr_terniary
-        | object_expr_unary_postfix                                    # subexpr_object
+	: negationOp* unaryOp? subexpression
+	;
+
+//expression
+//	: negationOp expression # exprNegation
+//	| maybeUnaryExpression  # exprNEXT
+//	;
+//
+//maybeUnaryExpression
+//	: unaryOp subexpression # unaryExpression
+//	| subexpression         # unaryNEXT
+//	;
+
+subexpression
+	: Left=subexpression Op=powerOp          Right=expression  # subexprPower
+	| Left=subexpression Op=multiplicativeOp Right=expression  # subexprMultiplicative
+	| Left=subexpression Op=additiveOp       Right=expression  # subexprAdditive
+	| Left=subexpression Op=comparitiveOp    Right=expression  # subexprComparitive
+	| Left=subexpression Op=equalityOp       Right=expression  # subexprEquality
+	| Left=subexpression Op=andOp            Right=expression  # subexprAnd
+	| Left=subexpression Op=orOp             Right=expression  # subexprOr
+	| TOK_IF First=expression TOK_THEN Second=expression
+	  (TOK_ELSE Third=expression)?                             # subexprTerniary
+	| object                                                   # subexprObject
 	;
 
 
-object_expr_unary_postfix
-        : object_expr_unary_postfix_modifier unaryPostfixOp
-        | object_expr_unary_postfix_modifier
-        ;
-
-object_expr_unary_postfix_modifier
-        : object unaryPostfixModifier
-        | object
-        ;
-
-
 object
-        : primary_object (PERIOD secondary_object)*    # expr_primary_object
-        | BuiltinFunction LPAREN expression RPAREN     # expr_builtin_function
-        ;
+	: primaryObject (PERIOD secondaryObject)* unaryPostfixOp? unaryPostfixModifier?
+	;
 
-primary_object
-        : parenthetical
-        | table_definition
-        | list_definition
-        | simple_terminal
-        ;
+primaryObject
+	: parenthetical
+	| tableDefinition
+	| listDefinition
+	| exprBuiltinFunction
+	| primaryTerminal
+	;
 
-secondary_object
-        : LBRACE expression RBRACE
-        | list_definition   // Format operations. FIXME: This is downright ugly.
-        | simple_terminal
-        ;
+secondaryObject
+	: LBRACE expression RBRACE
+	| listDefinition   // Format operations. FIXME: This is downright ugly.
+	| secondaryTerminal
+	;
 
-table_definition
-        : TOK_TABLE LBRACKET (table_assignment (COMMA table_assignment)* COMMA?)? RBRACKET
-        ;
+tableDefinition
+	: TOK_TABLE LBRACKET (tableAssignment (COMMA tableAssignment)* COMMA?)? RBRACKET
+	;
 
-table_assignment
-        : LBRACE object RBRACE EQUALS expression
-        | Variable             EQUALS expression
-        ;
+tableAssignment
+	: LBRACE object RBRACE EQUALS expression
+	| Variable             EQUALS expression
+	;
 
-list_definition
-        : LBRACKET (expression (COMMA expression)* COMMA?)? RBRACKET
-        ;
+listDefinition
+	: LBRACKET (expressionList COMMA?)? RBRACKET
+	;
 
 parenthetical
 	: LPAREN expression RPAREN
-        ;
+	;
 
-simple_terminal
-        : literal
-        | keywordClash
-        | identifier
-//        | blankLine  // FIXME: UGH
-        ;
+exprBuiltinFunction
+	: builtinFunction LPAREN expressionList? RPAREN
+	;
+
+primaryTerminal
+	: literal
+	| keywordClash
+	| identifier
+	;
+
+secondaryTerminal  /* ie. no literals */
+	: keywordClash
+	| identifier
+	;
 
 literal
 	: SString
 	| Float
 	| Integer
-//	| DistanceValue
-//	| DegreeValue
-//	| HealthValue
-//	| TimeValue
-//	| CreditValue
-        | TextDbRef
-        | TOK_NULL
+	| TextDbRef
+	| TOK_NULL
 	;
 
 identifier
@@ -204,53 +216,38 @@ identifier
 	| Variable
 	;
 
-//unary_postfix_modifier_expression_impl
-//        :<assoc=right> expression PostfixTime     # postfix_time_expression
-//        |<assoc=right> expression PostfixDistance # postfix_distance_expression
-//        |<assoc=right> expression PostfixMoney    # postfix_money_expression
-//        |<assoc=right> expression PostfixAngle    # postfix_angle_expression
-//        |<assoc=right> expression PostfixHealth   # postfix_health_expression
-//        ;
-
-//        : ('ms' | 's' | 'min' | 'h') # postfix_time
-//        | ('m' | 'km')               # postfix_distance
-//        | ('ct' | 'Cr')              # postfix_money
-//        | ('deg' | 'rad')            # postfix_angle
-//        | 'hp'                       # postfix_hp
-
 unaryPostfixModifier
-        : PostfixTime
-        | PostfixDistance
-        | PostfixMoney
-        | PostfixAngle
-        | PostfixHealth
-        | PostfixInteger
-        | PostfixFloat
-        ;
+	: (TOK_M | TOK_KM)                   # postfix_distance
+	| (TOK_CR | TOK_CT)                  # postfix_money
+	| (TOK_MS | TOK_S | TOK_MIN | TOK_H) # postfix_time
+	| (TOK_DEG | TOK_RAD)                # postfix_angle
+	| (TOK_HP)                           # postfix_health
+	| (TOK_I | TOK_L)                    # postfix_integer
+	| (TOK_F | TOK_LF)                   # postfix_float
+	;
 
 
-additiveOp: PLUS | MINUS;
-multiplicativeOp: ASTERIX | SLASH | PERCENT ;
-powerOp: POWER ;
-unaryPostfixOp: QMARK ;
-unaryOp: PLUS | MINUS | ATSIGN | TOK_TYPEOF ;
-negationOp: TOK_NOT | EXCLAM ;
-comparitiveOp : rule_gt | rule_lt | rule_le | rule_ge;
-equalityOp: OP_EQ | OP_NEQ ;
-andOp: TOK_AND | OP_AND ;
-orOp: TOK_OR | OP_OR ;
+/*--------------------------------------------------------------------------------------*/
 
 
-rule_gt: TOK_GT | RANGLE;
-rule_lt: TOK_LT | LANGLE;
-rule_ge: TOK_GE | OP_GE;
-rule_le: TOK_LE | OP_LE;
+comparitiveOp: groupGT | groupLT | groupGE | groupLE;
 
-//        : ('ms' | 's' | 'min' | 'h') # postfix_time
-//        | ('m' | 'km')               # postfix_distance
-//        | ('ct' | 'Cr')              # postfix_money
-//        | ('deg' | 'rad')            # postfix_angle
-//        | 'hp'                       # postfix_hp
-//        ;
+additiveOp:       PLUS | MINUS;
+andOp:            TOK_AND | OP_AND ;
+equalityOp:       OP_EQ | OP_NEQ;
+multiplicativeOp: ASTERIX | SLASH | PERCENT;
+negationOp:       TOK_NOT | EXCLAM;
+orOp:             TOK_OR | OP_OR;
+powerOp:          POWER;
+unaryOp:          PLUS | MINUS | ATSIGN | TOK_TYPEOF;
+unaryPostfixOp:   QMARK;
 
-// vim: tw=0
+
+groupGT: TOK_GT | RANGLE;
+groupLT: TOK_LT | LANGLE;
+groupGE: TOK_GE | OP_GE; 
+groupLE: TOK_LE | OP_LE; 
+
+
+/*--------------------------------------------------------------------------------------*/
+// vim: tw=0 sts=0 sw=0 noet ts=8

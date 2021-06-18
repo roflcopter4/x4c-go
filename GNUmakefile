@@ -1,7 +1,7 @@
 #
 # Makefile for GNU Make (gmake)
 #
-# I'd support GNU Make if I wasn't incredibly lazy. Using make should just be
+# I'd support GNU Make if I weren't incredibly lazy. Using make should just be
 # temporary anyway (I hope) so this theoretically shouldn't be a problem.
 #
 

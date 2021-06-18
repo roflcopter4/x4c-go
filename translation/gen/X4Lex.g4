@@ -11,10 +11,10 @@ BuiltinFunction : 'sin' | 'cos' | 'sqrt' | 'log' | 'exp';
 
 fragment IdentHead: [a-zA-Z_];
 fragment IdentChar: [a-zA-Z0-9_];
-fragment SP: [ ];
+fragment SP:  [ ];
 fragment INT: [0-9];
 fragment HEX: [0-9a-fA-F];
-fragment FLOAT: (((INT+ '.' INT* | '.' INT+)('e' INT+)?) | (INT+ 'e' INT+));
+fragment FLOAT: (((INT+ PERIOD INT* | PERIOD INT+)('e' INT+)?) | (INT+ 'e' INT+));
 
 /* These are the types formally defined in the schemas. */
 
@@ -22,7 +22,7 @@ fragment FLOAT: (((INT+ '.' INT* | '.' INT+)('e' INT+)?) | (INT+ 'e' INT+));
 ////        { ( Initial char     ) | ( String - may start with # ) }  { ( Non string character              ) | ( Another string?  dot??    ) }/Repeat
 //Expression: ( [A-Za-z0-9_$@+\-({[] | ('#'?['] (~['\\] | '.')* [']) )  ( [A-Za-z0-9_$!?@=<>;,.+\-*/%^(){}[\] ] | ('#'?['] (~['\\] | '.')* [']) )*;
 
-TextDbRef: '{' [1-9][0-9]* ',' SP* [1-9][0-9]* '}';
+TextDbRef: LBRACE [1-9][0-9]* COMMA SP* [1-9][0-9]* RBRACE;
 
 //Operator: '='
 //	| ';' | ':' | '.' | ','
@@ -48,13 +48,6 @@ TextDbRef: '{' [1-9][0-9]* ',' SP* [1-9][0-9]* '}';
 //DegreeValue:   (INT+ | FLOAT) [ ]* ('deg'|'rad');
 //HealthValue:   (INT+ | FLOAT) [ ]* 'hp';
 
-PostfixTime:     ('ms' | 's' | 'min' | 'h');
-PostfixDistance: ('m' | 'km');
-PostfixMoney:    ('ct' | 'Cr');
-PostfixAngle:    ('deg' | 'rad');
-PostfixHealth:   'hp';
-PostfixInteger:  'i'|'L';
-PostfixFloat:    'f'|'LF';
 
 /* UnaryPostfixModifier: 'ms' | 's' | 'min' | 'h' | 'm' | 'km' | 'ct' | 'Cr' | 'deg' | 'rad' | 'hp'; */
 
@@ -84,6 +77,72 @@ SString: ['] ('\\'['] | ~['])* ['];
 //{h}			{ ECHON; SETCHAR; return 'h'; }
 //{l}			{ ECHON; SETCHAR; return 'L'; }
 
+
+//AdditiveOp:       PLUS | MINUS ;
+//MultiplicativeOp: ASTERIX | SLASH | PERCENT ;
+//PowerOp:          POWER ;
+//NegationOp:       TOK_NOT | EXCLAM;
+//ComparitiveOp:    /*Rule_gt | Rule_lt |*/ TOK_GT | TOK_LT | RuleLE | RuleGE ;
+//EqualityOp:       OP_EQ | OP_NEQ ;
+//AndOp:            TOK_AND | OP_AND ;
+//OrOp:             TOK_OR | OP_OR;
+//UnaryPostfixOp:   QMARK ;
+//UnaryOp:          PLUS | MINUS | ATSIGN | TOK_TYPEOF ;
+
+
+//fragment Rule_gt: TOK_GT | RANGLE;
+//fragment Rule_lt: TOK_LT | LANGLE;
+//fragment RuleGE: TOK_GE | OP_GE;
+//fragment RuleLE: TOK_LE | OP_LE;
+
+
+//UnaryPostfixModifier
+//	: Postfix_Distance
+//	| Postfix_Money
+//	| Postfix_Time
+//	| Postfix_Angle
+//	| Postfix_Health
+//	| Postfix_Integer
+//	| Postfix_Float
+//	;
+//
+//Postfix_Distance: TOK_M | TOK_KM ;
+//Postfix_Money:    TOK_CR | TOK_CT ;
+//Postfix_Time:     TOK_MS | TOK_S | TOK_MIN | TOK_H ;
+//Postfix_Angle:    TOK_DEG | TOK_RAD ;
+//Postfix_Health:   TOK_HP ;
+//Postfix_Integer:  TOK_I | TOK_L ;
+//Postfix_Float:    TOK_F | TOK_LF ;
+
+
+ATSIGN:    '@';
+BACKSLASH: '\\';
+DOLLAR:    '$';
+EQUALS:    '=';
+EXCLAM:    '!';
+QMARK:     '?';
+LBRACKET:  '[';
+RBRACKET:  ']';
+LBRACE:    '{';
+RBRACE:    '}';
+LPAREN:    '(';
+RPAREN:    ')';
+LANGLE:    '<';
+RANGLE:    '>';
+POWER:     '^';
+PLUS:      '+';
+MINUS:     '-';
+ASTERIX:   '*';
+SLASH:     '/';
+PERCENT:   '%';
+COLON:     ':';
+COMMA:     ',';
+PERIOD:    '.';
+SEMICOLON: ';';
+SQUOTE:    ['];
+DQUOTE:    '"';
+
+
 //TOK_ADD:        'add';
 //TOK_BREAK:      'break';
 TOK_CHANCE:     'chance';
@@ -100,7 +159,7 @@ TOK_IN:         'in';
 //TOK_IS:         'is';
 //TOK_ISNOT:      'isnot';
 //TOK_LET:        'let';
-//TOK_LIST:       'list';
+TOK_LIST:       'list';
 TOK_NOT:        'not';
 TOK_NULL:       'null';
 //TOK_RANGE:      'range';
@@ -133,41 +192,29 @@ OP_OR: '||';
 //OP_ARROW: '=>';
 
 TOK_AND: 'and';
-TOK_OR: 'or';
-TOK_GE: 'ge';
-TOK_GT: 'gt';
-TOK_LE: 'le';
-TOK_LT: 'lt';
+TOK_OR:  'or';
+TOK_GE:  'ge';
+TOK_GT:  'gt';
+TOK_LE:  'le';
+TOK_LT:  'lt';
+
+TOK_MS:  'ms';
+TOK_S:   's';
+TOK_H:   'h';
+TOK_M:   'm';
+TOK_KM:  'km';
+TOK_CT:  'ct';
+TOK_CR:  'Cr';
+TOK_DEG: 'deg';
+TOK_RAD: 'rad';
+TOK_HP:  'hp';
+TOK_I:   'i';
+TOK_L:   'L';
+TOK_F:   'f';
+TOK_LF:  'LF';
+
 
 //TOK_DBG_CONTEXT: '#[';
-
-ATSIGN:    '@';
-BACKSLASH: '\\';
-DOLLAR:    '$';
-EQUALS:    '=';
-EXCLAM:    '!';
-QMARK:     '?';
-LBRACKET:  '[';
-RBRACKET:  ']';
-LBRACE:    '{';
-RBRACE:    '}';
-LPAREN:    '(';
-RPAREN:    ')';
-LANGLE:    '<';
-RANGLE:    '>';
-POWER:     '^';
-PLUS:      '+';
-MINUS:     '-';
-ASTERIX:   '*';
-SLASH:     '/';
-PERCENT:   '%';
-COLON:     ':';
-COMMA:     ',';
-PERIOD:    '.';
-SEMICOLON: ';';
-SQUOTE:    ['];
-DQUOTE:    '"';
-
 
 /* And my types... */
 Variable: '$' IdentChar+;
@@ -180,3 +227,4 @@ BlockComment: '/*' .*? '*/';
 Newline:    ('\r\n' | '\n') -> skip;
 Whitespace: [\t ]+          -> skip;
 
+Garbage: . ;

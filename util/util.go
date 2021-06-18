@@ -131,3 +131,7 @@ func StrEqAll(cmp string, lst ...string) bool {
 	}
 	return true
 }
+
+func IntIsBetween(i, low, high int) bool {
+	return i >= low && i < high
+}
