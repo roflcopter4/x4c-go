@@ -5,6 +5,7 @@ import (
 	"os"
 	"sort"
 	"strings"
+	"sync"
 
 	// XML "github.com/lestrrat-go/libxml2"
 	// XMLxsd "github.com/lestrrat-go/libxml2/xsd"
@@ -16,6 +17,9 @@ import (
 
 	"github.com/roflcopter4/x4c-go/myxml"
 	"github.com/roflcopter4/x4c-go/translation/ast"
+
+	// "github.com/roflcopter4/x4c-go/translation/newast"
+
 	"github.com/roflcopter4/x4c-go/util"
 )
 
@@ -27,6 +31,8 @@ type builder struct {
 	a     ast.AST
 	cur   ast.Node
 	block ast.Node
+
+	wg sync.WaitGroup
 }
 
 func Translate(outfp *os.File, doc myxml.DocWrapper) {
@@ -45,7 +51,10 @@ func Translate(outfp *os.File, doc myxml.DocWrapper) {
 	b.block = b.a.GetRoot()
 
 	for reader.TextRead() != 0 {
-		node, _ := reader.CurrentNode()
+		node, err := reader.CurrentNode()
+		if err != nil {
+			util.Eprintf("Top level error: (%v)\n\n", err)
+		}
 
 		/* Sometimes text nodes and comments have to be identified via the node,
 		 * other times things work just fine via the reader. I dunno. I'm probably
@@ -75,8 +84,15 @@ func Translate(outfp *os.File, doc myxml.DocWrapper) {
 
 	}
 
+	// if outfp == os.Stdout {
+	//       if outfp, err = os.Open(os.DevNull); err != nil {
+	//             panic(err)
+	//       }
+	// }
+
 	lines := make_output(b.a)
 	fmt.Fprintln(outfp, strings.Join(lines, "\n"))
+	// b.wg.Wait()
 }
 
 //========================================================================================
@@ -128,7 +144,7 @@ func (b *builder) CommentNode(node XMLtypes.Node) {
 func (b *builder) GenericXML(node XMLtypes.Node) {
 	stmt := b.block.AddXMLStatement(b.rd.Name())
 	b.cur = stmt
-	b.add_attributes(stmt)
+	b.add_attributes(stmt, node)
 
 	if node.HasChildNodes() {
 		b.block = stmt
@@ -144,7 +160,7 @@ func (b *builder) Conditional(node XMLtypes.Node, ctype int) {
 		b.rd.MoveToAttributeNo(0)
 
 		if nattr == 1 && b.rd.Name() == "value" {
-			new_dump(b.rd.Name(), b.rd.Value())
+			// b.new_dump("value", b.rd.Value())
 			expr.Raw = b.rd.Value()
 		} else {
 			attr, _ := node.(XMLtypes.Element).Attributes()
@@ -157,8 +173,8 @@ func (b *builder) Conditional(node XMLtypes.Node, ctype int) {
 				if node, _ := b.rd.CurrentNode(); node != nil {
 					expr.XML.Attributes[i] = &ast.XMLAttribute{
 						Name: b.rd.Name(),
-						//Val:  ast.NewExpression(b.rd.Value()),
-						Val: lazy_lazy_lazy(b.rd.Name(), b.rd.Value()),
+						Val:  ast.NewExpression(b.rd.Value()),
+						// Val: b.lazy_lazy_lazy(b.rd.Name(), b.rd.Value()),
 					}
 				}
 			}
@@ -170,17 +186,39 @@ func (b *builder) Conditional(node XMLtypes.Node, ctype int) {
 	b.block = stmt
 }
 
-//========================================================================================
+//----------------------------------------------------------------------------------------
 
-func (b *builder) add_attributes(stmt *ast.XMLStatement) {
+func (b *builder) add_attributes(stmt *ast.XMLStatement, node XMLtypes.Node) {
+	// attr, err := node.(XMLtypes.Element).Attributes()
+	// util.Eprintf("%s:  %d - %d\n", node.NodeName(), b.rd.AttributeCount(), len(attr))
+	// if err != nil {
+	//       util.Eprintf("Got an error: (%v)\n", err)
+	// }
+	//
+	// for _, a := range attr {
+	//       stmt.AddAttribute(a.NodeName(), ast.NewExpression(a.NodeValue()))
+	// }
+
 	for i, nattr := 0, b.rd.AttributeCount(); i < nattr; i++ {
-		b.rd.MoveToAttributeNo(i)
-		if node, _ := b.rd.CurrentNode(); node != nil {
-			// expr := ast.NewExpression(b.rd.Value())
-			expr := lazy_lazy_lazy(b.rd.Name(), b.rd.Value())
-			stmt.AddAttribute(b.rd.Name(), expr)
+		if err := b.rd.MoveToAttributeNo(i); err != nil {
+			stmt.AddAttribute(b.rd.Name(), ast.NewExpression(b.rd.Value()))
 		}
 	}
+	// if b.rd.AttributeCount() > 0 {
+	//       err := b.rd.MoveToFirstAttribute()
+	//       if err != nil {
+	//             util.Eprintf("%v\n", err)
+	//       }
+	//       for ; err != nil; err = b.rd.MoveToNextAttribute() {
+	//             if node, err := b.rd.CurrentNode(); node != nil && err != nil {
+	//                   // expr := ast.NewExpression(b.rd.Value())
+	//                   expr := b.lazy_lazy_lazy(b.rd.Name(), b.rd.Value())
+	//                   stmt.AddAttribute(b.rd.Name(), expr)
+	//             } else if err != nil {
+	//                   util.Eprintf("Got (%v)\n", err)
+	//             }
+	//       }
+	// }
 }
 
 func get_attr_string(lst []XMLtypes.Attribute) (ret string) {
@@ -193,14 +231,16 @@ func get_attr_string(lst []XMLtypes.Attribute) (ret string) {
 	return
 }
 
-func new_dump(name, val string) {
-	util.Eprintf("Looking at expression `%s=\"%s\"`\n", name, val)
-	// newast.Parse_Expression(val)
-}
-
-func lazy_lazy_lazy(name, val string) *ast.Expression {
+func (b *builder) lazy_lazy_lazy(name, val string) *ast.Expression {
 	// if !util.StrEqAny(name, "comment", "xmlns:xsi", "xsi:noNamespaceSchemaLocation") {
-	//       new_dump(name, val)
+	//       // b.new_dump(name, val)
 	// }
 	return ast.NewExpression(val)
 }
+
+//========================================================================================
+
+// func (b *builder) new_dump(name, val string) {
+//       newast.Parse_Expression(&b.wg, b.doc.Name().Base(), name, val)
+//       // newast.Parse_Expression(nil, b.doc.Name().Base(), name, val)
+// }

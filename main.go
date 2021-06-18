@@ -57,6 +57,10 @@ func main() {
 	//       translation.TestNewAst(args[0])
 	default:
 	}
+
+	if opt.outfile.fp != os.Stdout {
+		opt.outfile.fp.Close()
+	}
 }
 
 func handle_opts() []string {

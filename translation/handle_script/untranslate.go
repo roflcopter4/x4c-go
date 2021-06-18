@@ -9,7 +9,8 @@ import (
 	"github.com/antlr/antlr4/runtime/Go/antlr"
 
 	"github.com/roflcopter4/x4c-go/translation/ast"
-	"github.com/roflcopter4/x4c-go/translation/gen/parser"
+	"github.com/roflcopter4/x4c-go/translation/gen/sepLexer"
+	parser "github.com/roflcopter4/x4c-go/translation/gen/sepParser"
 )
 
 func Translate(outfp *os.File, fname string) {
@@ -24,26 +25,26 @@ func Translate(outfp *os.File, fname string) {
 
 func TestLexer(str string, isfile bool) {
 	var (
-		chs   antlr.CharStream
-		lexer *parser.X4CLexer
+		chs antlr.CharStream
+		lex *sepLexer.X4Lex
 	)
 
 	if isfile {
-		chs, lexer = get_lexer(str)
+		chs, lex = get_lexer(str)
 
 	} else {
 		chs = antlr.NewInputStream(str)
-		lexer = parser.NewX4CLexer(chs)
+		lex = sepLexer.NewX4Lex(chs)
 	}
 
 	for {
-		t := lexer.NextToken()
+		t := lex.NextToken()
 		if t.GetTokenType() == antlr.TokenEOF {
 			break
 		}
 		ind := t.GetStart()
 		fmt.Printf("%s (%q) -> (%d: %v)\n",
-			lexer.SymbolicNames[t.GetTokenType()], t.GetText(), ind,
+			lex.SymbolicNames[t.GetTokenType()], t.GetText(), ind,
 			chs.GetText(t.GetStart(), t.GetStop()))
 	}
 	fmt.Println(chs.GetText(0, chs.Size()))
@@ -52,27 +53,27 @@ func TestLexer(str string, isfile bool) {
 /****************************************************************************************/
 
 type listener struct {
-	*parser.BaseX4CListener
+	*parser.BaseX4ParseListener
 
 	a     ast.AST
 	cur   ast.Node
 	block ast.Node
 
 	chs antlr.CharStream
-	lex *parser.X4CLexer
-	par *parser.X4CParser
+	lex *sepLexer.X4Lex
+	par *parser.X4Parse
 }
 
 func parse_file(fname string) ast.AST {
 	var (
-		chs, lexer = get_lexer(fname)
-		stream     = antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel)
-		par        = parser.NewX4CParser(stream)
+		chs, lex = get_lexer(fname)
+		stream   = antlr.NewCommonTokenStream(lex, antlr.TokenDefaultChannel)
+		par      = parser.NewX4Parse(stream)
 
 		l = &listener{
 			a:   ast.NewAst(),
 			chs: chs,
-			lex: lexer,
+			lex: lex,
 			par: par,
 		}
 	)
@@ -85,7 +86,7 @@ func parse_file(fname string) ast.AST {
 	return l.a
 }
 
-func get_lexer(fname string) (antlr.CharStream, *parser.X4CLexer) {
+func get_lexer(fname string) (antlr.CharStream, *sepLexer.X4Lex) {
 	var charstream antlr.CharStream
 
 	if fname == "-" {
@@ -102,7 +103,7 @@ func get_lexer(fname string) (antlr.CharStream, *parser.X4CLexer) {
 		charstream = fs
 	}
 
-	return charstream, parser.NewX4CLexer(charstream)
+	return charstream, sepLexer.NewX4Lex(charstream)
 }
 
 /****************************************************************************************/
@@ -129,14 +130,14 @@ func (l *listener) EnterCommentStmt(c *parser.CommentStmtContext) {
 	txt := tok.GetText()
 
 	switch tok.GetTokenType() {
-	case parser.X4CParserLineComment:
+	case parser.X4ParseLineComment:
 		txt = strings.TrimPrefix(txt, "//")
 		txt = strings.TrimRight(txt, "\r\n")
 		if txt[0] == ' ' {
 			txt += " "
 		}
 
-	case parser.X4CParserBlockComment:
+	case parser.X4ParseBlockComment:
 		txt = strings.TrimPrefix(txt, "/*")
 		txt = strings.TrimSuffix(txt, "*/")
 	}
@@ -144,9 +145,9 @@ func (l *listener) EnterCommentStmt(c *parser.CommentStmtContext) {
 	l.block.AddComment(txt)
 }
 
-func (l *listener) EnterBlankLine(c *parser.BlankLineContext) {
-	l.block.AddTextNode("")
-}
+// func (l *listener) EnterBlankLine(c *parser.BlankLineContext) {
+//       l.block.AddTextNode("")
+// }
 
 /****************************************************************************************/
 
